@@ -95,7 +95,7 @@ cp .env.example .env
 
 2. Launch the web interface:
    ```bash
-   python -m http.server 5500
+   python -m http.server 5500 --directory ./frontend      
    ```
 
    Open a web browser and navigate to: http://localhost:5500
