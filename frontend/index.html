@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Vito's Pizza Cafe Assistant</title>
+    <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Vito's Pizza Cafe Assistant</h1>
+            <p class="subtitle">Ask about our menu, orders, delivery, and more</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Left Sidebar -->
+            <aside class="sidebar">
+                <!-- New Conversation Button -->
+                <div class="sidebar-section">
+                    <button id="newConversationBtn" class="sidebar-link">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2v20M2 12h20"></path>
+                        </svg>
+                        New Conversation
+                    </button>
+                </div>
+
+                <!-- Restaurant Info -->
+                <div class="sidebar-section">
+                    <details class="stats-collapsible">
+                        <summary class="stats-header">Restaurant Info</summary>
+                        <div class="restaurant-info" id="restaurantInfo">
+                            <div class="info-item">
+                                <span class="info-label">Hours:</span>
+                                <span class="info-value">11AM - 11PM Daily</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Phone:</span>
+                                <span class="info-value">(555) 123-PIZZA</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Delivery:</span>
+                                <span class="info-value">Available</span>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
+                <!-- Suggested Questions -->
+                <div class="sidebar-section">
+                    <details class="suggested-collapsible">
+                        <summary class="suggested-header">Try asking:</summary>
+                        <div class="suggested-items">
+                            <button class="suggested-item" data-question="What's on your menu today?">What's on your menu?</button>
+                            <button class="suggested-item" data-question="Do you offer gluten-free options?">Gluten-free options</button>
+                            <button class="suggested-item" data-question="Do you deliver?">Do you deliver?</button>
+                            <button class="suggested-item" data-question="What are your delivery hours?">Delivery hours</button>
+                            <button class="suggested-item" data-question="How can I place an order?">How to place an order</button>
+                            <button class="suggested-item" data-question="Do you have any current promotions or deals?">Current promotions</button>
+                            <button class="suggested-item" data-question="What payment methods do you accept?">Payment methods</button>
+                        </div>
+                    </details>
+                </div>
+            </aside>
+
+            <!-- Main Chat Area -->
+            <main class="chat-main">
+                <div class="chat-container">
+                    <div id="chatMessages" class="chat-messages"></div>
+                    <div class="chat-input-container">
+                        <input
+                            type="text"
+                            id="chatInput"
+                            placeholder="Ask about our menu, orders, or anything else..."
+                            autocomplete="off"
+                        >
+                        <button id="sendButton">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="script.js?v=1"></script>
+</body>
+</html>
