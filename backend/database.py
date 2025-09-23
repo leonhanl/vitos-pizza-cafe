@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
 from langchain_community.utilities.sql_database import SQLDatabase
 from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
-from langchain_deepseek import ChatDeepSeek
+from langchain_openai import ChatOpenAI
 
 from .config import Config
 
@@ -46,7 +46,7 @@ def get_engine_for_customer_db(sql_file_path: str):
 def setup_database_tools():
     """Set up database connection and tools."""
     # Initialize LLM for database operations
-    llm = ChatDeepSeek(
+    llm = ChatOpenAI(
         model=Config.LLM_MODEL,
         temperature=Config.LLM_TEMPERATURE,
         max_tokens=None,

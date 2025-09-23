@@ -13,7 +13,7 @@ class Config:
 
     # Required API Keys
     COHERE_API_KEY = os.getenv("COHERE_API_KEY")
-    DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
     # Optional API Keys
     LANGSMITH_API_KEY = os.getenv("LANGSMITH_API_KEY")
@@ -27,7 +27,7 @@ class Config:
     DATABASE_PATH = os.getenv("DATABASE_PATH", "customer_db.sql")
 
     # Model Configuration
-    LLM_MODEL = os.getenv("LLM_MODEL", "deepseek-chat")
+    LLM_MODEL = os.getenv("LLM_MODEL", "gpt-5-mini")
     LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0"))
     LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "2"))
 
@@ -46,7 +46,7 @@ class Config:
         """Validate that all required environment variables are set."""
         required_vars = [
             "COHERE_API_KEY",
-            "DEEPSEEK_API_KEY"
+            "OPENAI_API_KEY"
         ]
 
         missing_vars = [var for var in required_vars if not getattr(cls, var)]
@@ -60,7 +60,7 @@ class Config:
     @classmethod
     def setup_environment(cls):
         """Set up environment variables for external libraries."""
-        os.environ["DEEPSEEK_API_KEY"] = cls.DEEPSEEK_API_KEY
+        os.environ["OPENAI_API_KEY"] = cls.OPENAI_API_KEY
         os.environ["COHERE_API_KEY"] = cls.COHERE_API_KEY
         os.environ["LANGSMITH_TRACING"] = cls.LANGSMITH_TRACING
         if cls.LANGSMITH_API_KEY:
