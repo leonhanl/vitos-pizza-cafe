@@ -4,7 +4,30 @@ model_list:
       model: gpt-5-nano
       api_base: https://api.openai.com/v1
       api_key: "os.environ/OPENAI_API_KEY"
+      stream: false
+      # guardrails: ["panw-prisma-airs-input-guardrail", "panw-prisma-airs-output-guardrail"]
+
+guardrails:
+  - guardrail_name: "panw-prisma-airs-input-guardrail"
+    litellm_params:
+      guardrail: panw_prisma_airs
+      mode: "pre_call"                    # Run before LLM call
+      api_key: "os.environ/AIRS_API_KEY"    # Your PANW API key
+      profile_name: "os.environ/AIRS_API_INPUT_PROFILE_NAME"  # Security profile from Strata Cloud Manager
+      default_on: true
+      # api_base: "https://service.api.aisecurity.paloaltonetworks.com/v1/scan/sync/request"  # Optional
+
+  - guardrail_name: "panw-prisma-airs-output-guardrail"
+    litellm_params:
+      guardrail: panw_prisma_airs
+      mode: "post_call"                    # Run before LLM call
+      api_key: "os.environ/AIRS_API_KEY"    # Your PANW API key
+      profile_name: "os.environ/AIRS_API_OUTPUT_PROFILE_NAME"  # Security profile from Strata Cloud Manager
+      default_on: true
+      # api_base: "https://service.api.aisecurity.paloaltonetworks.com/v1/scan/sync/request"  # Optional
 
 general_settings: 
   master_key: os.environ/LITELLM_MASTER_KEY 
   database_url: os.environ/DATABASE_URL
+  store_model_in_db: true
+  store_prompts_in_spend_logs: true
