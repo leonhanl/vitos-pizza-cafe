@@ -40,7 +40,7 @@ services:
       - ./litellm_config.yaml:/app/config.yaml
     networks:
       - litellm_network
-    command: ["--config", "/app/config.yaml"]   # "--detailed_debug" is an optional flag for more verbose logging
+    command: ["--config", "/app/config.yaml", "--detailed_debug"]   # "--detailed_debug" is an optional flag for more verbose logging
 
 volumes:
   postgres_data:
