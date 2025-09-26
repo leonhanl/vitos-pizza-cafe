@@ -1,0 +1,10 @@
+model_list: 
+  - model_name: gpt-5-nano  # user-facing model alias
+    litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
+      model: gpt-5-nano
+      api_base: https://api.openai.com/v1
+      api_key: "os.environ/OPENAI_API_KEY"
+
+general_settings: 
+  master_key: os.environ/LITELLM_MASTER_KEY 
+  database_url: os.environ/DATABASE_URL

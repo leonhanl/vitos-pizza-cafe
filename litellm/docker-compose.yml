@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: litellm_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - litellm_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    container_name: litellm_proxy
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    environment:
+      # database_url format: postgresql://<user>:<password>@<host>:<port>/<dbname>
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      # read the Master Key from .env file
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
+      # read the Salt Key from .env file
+      LITELLM_SALT_KEY: ${LITELLM_SALT_KEY}
+
+      # refer to the litellm_config.yaml for model_list and their respective API keys
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    volumes:
+      - ./litellm_config.yaml:/app/config.yaml
+    networks:
+      - litellm_network
+    command: ["--config", "/app/config.yaml"]   # "--detailed_debug" is an optional flag for more verbose logging
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  litellm_network:
+    driver: bridge
