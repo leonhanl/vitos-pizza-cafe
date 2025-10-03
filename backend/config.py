@@ -41,6 +41,17 @@ class Config:
     CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "1000"))
     CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "200"))
 
+    # MCP Configuration
+    # Format: {"server_name": {"url": "https://...", "transport": "sse", ...}}
+    # Example:
+    # MCP_SERVERS = {
+    #     "amap-amap-sse": {
+    #         "url": "https://mcp.amap.com/sse?key=YOUR_API_KEY",
+    #         "transport": "sse"
+    #     }
+    # }
+    MCP_SERVERS = {}
+
     @classmethod
     def validate_required_vars(cls):
         """Validate that all required environment variables are set."""

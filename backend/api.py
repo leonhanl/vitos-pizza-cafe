@@ -98,8 +98,8 @@ async def chat(request: ChatRequest):
         # Get or create chat service for the conversation
         chat_service = get_or_create_chat_service(request.conversation_id)
 
-        # Process the message
-        response = chat_service.process_query(request.message)
+        # Process the message asynchronously (FastAPI already runs in an event loop)
+        response = await chat_service.aprocess_query(request.message)
 
         logger.info(f"Chat response generated for conversation_id={request.conversation_id}")
 

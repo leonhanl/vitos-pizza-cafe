@@ -1,6 +1,7 @@
 """Chat service for Vito's Pizza Cafe application."""
 
 import logging
+import asyncio
 from typing import List, Optional, Dict, Any
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langgraph.prebuilt import create_react_agent
@@ -8,6 +9,8 @@ from langgraph.prebuilt import create_react_agent
 from .config import logger
 from .knowledge_base import retrieve_context
 from .database import get_database_tools
+from .llm import get_llm
+from .mcp_tools import get_mcp_tools
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +28,14 @@ class ChatService:
         logger.info(f"ChatService initialized with conversation_id: {conversation_id}")
 
     def process_query(self, user_input: str) -> str:
-        """Process user query with mandatory RAG retrieval + React agent."""
+        """Process user query with mandatory RAG retrieval + React agent.
+
+        This is a synchronous wrapper around the async implementation.
+        """
+        return asyncio.run(self.aprocess_query(user_input))
+
+    async def aprocess_query(self, user_input: str) -> str:
+        """Process user query with mandatory RAG retrieval + React agent (async version)."""
         logger.info(f"Processing query: {user_input}, Conversation ID: {self.conversation_id}")
 
         try:
@@ -33,16 +43,26 @@ class ChatService:
             context = retrieve_context(user_input)
             logger.debug(f"Retrieved context for query: {user_input}")
 
-            # 2. Get database tools and LLM
-            tools, llm = get_database_tools()
+            # 2. Get LLM instance
+            llm = get_llm()
 
-            # 3. Create React agent
+            # 3. Get database tools
+            db_tools = get_database_tools(llm)
+
+            # 4. Get MCP tools (async)
+            mcp_tools = await get_mcp_tools()
+
+            # 5. Combine all tools
+            tools = db_tools + mcp_tools
+            logger.info(f"Total tools available: {len(tools)} (DB: {len(db_tools)}, MCP: {len(mcp_tools)})")
+
+            # 6. Create React agent
             react_agent = create_react_agent(
                 model=llm,
                 tools=tools
             )
 
-            # 4. Prepare messages
+            # 7. Prepare messages
             messages = []
 
             # Add system prompt with context
@@ -56,11 +76,11 @@ class ChatService:
             # Add current user query
             messages.append(HumanMessage(content=user_input))
 
-            # 5. Get response from React agent
+            # 8. Get response from React agent
             result = react_agent.invoke({"messages": messages})
             response = result["messages"][-1].content
 
-            # 6. Update conversation history
+            # 9. Update conversation history
             self.conversation_history.append(HumanMessage(content=user_input))
             self.conversation_history.append(AIMessage(content=response))
 

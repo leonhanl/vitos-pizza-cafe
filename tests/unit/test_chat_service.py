@@ -1,7 +1,6 @@
 """Unit tests for chat service."""
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch, AsyncMock
 from langchain_core.messages import HumanMessage, AIMessage
 
 from backend.chat_service import ChatService, get_or_create_chat_service, delete_conversation
@@ -21,15 +20,23 @@ class TestChatService:
         assert self.chat_service.conversation_history == []
 
     @patch('backend.chat_service.retrieve_context')
+    @patch('backend.chat_service.get_llm')
     @patch('backend.chat_service.get_database_tools')
+    @patch('backend.chat_service.get_mcp_tools', new_callable=lambda: AsyncMock(return_value=[]))
     @patch('backend.chat_service.create_react_agent')
-    def test_process_query_success(self, mock_create_agent, mock_get_tools, mock_retrieve_context):
+    def test_process_query_success(self, mock_create_agent, mock_get_mcp_tools,
+                                   mock_get_db_tools, mock_get_llm, mock_retrieve_context):
         """Test successful query processing."""
         # Mock dependencies
         mock_retrieve_context.return_value = "<context>Test context</context>"
-        mock_tools = [Mock()]
+
+        # Mock LLM
         mock_llm = Mock()
-        mock_get_tools.return_value = (mock_tools, mock_llm)
+        mock_get_llm.return_value = mock_llm
+
+        # Mock database tools
+        mock_db_tools = [Mock()]
+        mock_get_db_tools.return_value = mock_db_tools
 
         # Mock React agent
         mock_agent = Mock()
@@ -41,15 +48,19 @@ class TestChatService:
         mock_agent.invoke.return_value = mock_result
         mock_create_agent.return_value = mock_agent
 
-        # Test query processing
+        # Test query processing (sync wrapper calls asyncio.run internally)
         user_input = "What's on the menu?"
         result = self.chat_service.process_query(user_input)
 
         # Assertions
         assert result == "Test response"
         mock_retrieve_context.assert_called_once_with(user_input)
-        mock_get_tools.assert_called_once()
-        mock_create_agent.assert_called_once_with(model=mock_llm, tools=mock_tools)
+        mock_get_llm.assert_called_once()
+        mock_get_db_tools.assert_called_once_with(mock_llm)
+
+        # Verify agent was created with combined tools
+        expected_tools = mock_db_tools + []  # db_tools + mcp_tools (empty list)
+        mock_create_agent.assert_called_once_with(model=mock_llm, tools=expected_tools)
 
         # Check conversation history was updated
         assert len(self.chat_service.conversation_history) == 2

@@ -29,6 +29,7 @@
         "langchain-core>=0.3.51",
         "langchain-openai>=0.3.12",
         "langchain-community>=0.3.21",
+        "langchain-mcp-adapters>=0.1.10",
         "langgraph>=0.3.25",
         "cohere==5.14.2",
         "faiss-cpu>=1.10.0",

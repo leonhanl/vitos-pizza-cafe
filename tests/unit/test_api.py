@@ -2,7 +2,7 @@
 
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, AsyncMock
 
 from backend.api import app
 
@@ -33,9 +33,9 @@ class TestVitosAPI:
     @patch('backend.api.get_or_create_chat_service')
     def test_chat_endpoint_success(self, mock_get_service):
         """Test successful chat request."""
-        # Mock chat service
+        # Mock chat service with async method
         mock_service = Mock()
-        mock_service.process_query.return_value = "Hello! I'm here to help."
+        mock_service.aprocess_query = AsyncMock(return_value="Hello! I'm here to help.")
         mock_get_service.return_value = mock_service
 
         # Send chat request
@@ -51,13 +51,13 @@ class TestVitosAPI:
 
         # Verify service was called correctly
         mock_get_service.assert_called_once_with("test_conversation")
-        mock_service.process_query.assert_called_once_with("Hello")
+        mock_service.aprocess_query.assert_called_once_with("Hello")
 
     @patch('backend.api.get_or_create_chat_service')
     def test_chat_endpoint_default_conversation(self, mock_get_service):
         """Test chat request with default conversation ID."""
         mock_service = Mock()
-        mock_service.process_query.return_value = "Response"
+        mock_service.aprocess_query = AsyncMock(return_value="Response")
         mock_get_service.return_value = mock_service
 
         response = self.client.post("/api/v1/chat", json={
@@ -81,7 +81,7 @@ class TestVitosAPI:
     def test_chat_endpoint_service_error(self, mock_get_service):
         """Test chat endpoint when service throws error."""
         mock_service = Mock()
-        mock_service.process_query.side_effect = Exception("Service error")
+        mock_service.aprocess_query = AsyncMock(side_effect=Exception("Service error"))
         mock_get_service.return_value = mock_service
 
         response = self.client.post("/api/v1/chat", json={
@@ -164,7 +164,7 @@ class TestVitosAPI:
 
         with patch('backend.api.get_or_create_chat_service') as mock_get_service:
             mock_service = Mock()
-            mock_service.process_query.return_value = "Processed large message"
+            mock_service.aprocess_query = AsyncMock(return_value="Processed large message")
             mock_get_service.return_value = mock_service
 
             response = self.client.post("/api/v1/chat", json={
