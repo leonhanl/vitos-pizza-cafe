@@ -177,3 +177,8 @@ cython_debug/
 
 .vscode/
 .DS_Store
+
+
+# FAISS vector store directory (backend/Vitos-Pizza-Cafe-KB/faiss_index) - ignore all files in this directory and the directory itself
+backend/Vitos-Pizza-Cafe-KB/faiss_index/
+
