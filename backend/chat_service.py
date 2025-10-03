@@ -77,7 +77,7 @@ class ChatService:
             messages.append(HumanMessage(content=user_input))
 
             # 8. Get response from React agent
-            result = react_agent.invoke({"messages": messages})
+            result = await react_agent.ainvoke({"messages": messages})
             response = result["messages"][-1].content
 
             # 9. Update conversation history

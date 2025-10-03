@@ -1,8 +1,9 @@
 # Delivery and Pickup
 
 ## Delivery Areas
-- We deliver within a 7-mile radius of our store locations.
-- Enter your address in the app to verify if delivery is available in your area.
+- We deliver within a 5-kilometer radius of our store locations.
+- Restaurant Address: "上海来福士广场, 黄浦区西藏中路268号，上海市"
+- Enter your address in the app, and we can help check if it’s within our delivery area.
 
 ## Estimated Delivery Times
 - Average delivery time: 25-40 minutes.

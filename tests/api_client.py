@@ -13,7 +13,7 @@ class VitosApiClient:
     def __init__(self, base_url: str = "http://localhost:8000"):
         """Initialize API client with base URL."""
         self.base_url = base_url.rstrip("/")
-        self.client = httpx.Client(timeout=30.0)
+        self.client = httpx.Client(timeout=120.0)  # Increased timeout for MCP tool calls
         logger.info(f"VitosApiClient initialized with base_url: {self.base_url}")
 
     def chat(self, message: str, conversation_id: str = "default") -> str:

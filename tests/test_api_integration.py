@@ -70,9 +70,9 @@ class TestVitosAPIIntegration:
         test_messages = [
             "What's on the menu?",
             "Do you deliver?",
+            "Do you deliver to this address: 力宝广场, 上海市淮海中路222号",
             "What are your hours?",
-            "Tell me about your pizza sizes",
-            "How much does a large pepperoni pizza cost?"
+            "Tell me about your pizza sizes"
         ]
 
         for i, message in enumerate(test_messages, 1):
