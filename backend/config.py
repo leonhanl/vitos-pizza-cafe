@@ -14,6 +14,7 @@ class Config:
     # Required API Keys
     COHERE_API_KEY = os.getenv("COHERE_API_KEY")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    AMAP_API_KEY = os.getenv("AMAP_API_KEY")
 
     # Optional API Keys
     LANGSMITH_API_KEY = os.getenv("LANGSMITH_API_KEY")
@@ -51,6 +52,11 @@ class Config:
     #     }
     # }
     MCP_SERVERS = {}
+    if AMAP_API_KEY:
+        MCP_SERVERS["amap-amap-sse"] = {
+            "url": f"https://mcp.amap.com/sse?key={AMAP_API_KEY}",
+            "transport": "sse"
+        }
 
     @classmethod
     def validate_required_vars(cls):
