@@ -38,14 +38,14 @@ class TestChatService:
         mock_db_tools = [Mock()]
         mock_get_db_tools.return_value = mock_db_tools
 
-        # Mock React agent
+        # Mock React agent (must support ainvoke)
         mock_agent = Mock()
         mock_result = {
             "messages": [
                 Mock(content="Test response")
             ]
         }
-        mock_agent.invoke.return_value = mock_result
+        mock_agent.ainvoke = AsyncMock(return_value=mock_result)
         mock_create_agent.return_value = mock_agent
 
         # Test query processing (sync wrapper calls asyncio.run internally)
