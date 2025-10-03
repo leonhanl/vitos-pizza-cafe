@@ -182,3 +182,5 @@ cython_debug/
 # FAISS vector store directory (Vitos-Pizza-Cafe-KB/faiss_index) - ignore all files in this directory and the directory itself
 Vitos-Pizza-Cafe-KB/faiss_index/
 
+# ignore the temp directory
+temp/
