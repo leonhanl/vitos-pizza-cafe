@@ -1,8 +1,30 @@
 // API base URL - use backend API endpoints
 const API_URL = 'http://localhost:8000/api/v1';
+const REQUEST_TIMEOUT = 120000; // 120 seconds for MCP tool calls
 
 // Global state
 let currentConversationId = 'default';
+
+// Fetch with timeout helper
+async function fetchWithTimeout(url, options = {}, timeout = REQUEST_TIMEOUT) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        return response;
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            throw new Error('Request timed out. The server is taking too long to respond.');
+        }
+        throw error;
+    }
+}
 
 // DOM elements
 let chatMessages, chatInput, sendButton, newConversationBtn;
@@ -59,7 +81,7 @@ async function sendMessage() {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
     try {
-        const response = await fetch(`${API_URL}/chat`, {
+        const response = await fetchWithTimeout(`${API_URL}/chat`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -142,7 +164,7 @@ async function createNewConversation() {
     // Delete previous conversation from backend to prevent memory leak
     if (currentConversationId && currentConversationId !== 'default') {
         try {
-            const response = await fetch(`${API_URL}/conversations/${currentConversationId}`, {
+            const response = await fetchWithTimeout(`${API_URL}/conversations/${currentConversationId}`, {
                 method: 'DELETE'
             });
 
@@ -175,7 +197,7 @@ async function createNewConversation() {
 // Health check function to verify backend connectivity
 async function checkBackendHealth() {
     try {
-        const response = await fetch(`${API_URL}/health`);
+        const response = await fetchWithTimeout(`${API_URL}/health`, {}, 10000); // 10s timeout for health check
         if (!response.ok) throw new Error('Health check failed');
         const data = await response.json();
         console.log('Backend health:', data);
