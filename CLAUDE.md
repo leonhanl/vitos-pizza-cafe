@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is Vito's Pizza Cafe - an AI customer service application demonstrating AI security vulnerabilities and their mitigation using Palo Alto Networks AI Runtime Security (AIRS). The application is built with LangGraph for conversation flow, RAG for information retrieval, and Streamlit for the web interface.
+This is Vito's Pizza Cafe - an AI customer service application demonstrating AI security vulnerabilities and their mitigation using Palo Alto Networks AI Runtime Security (AIRS). The application is built with LangGraph for conversation flow, RAG for information retrieval, and a lightweight HTML/JS web interface.
 
 ## Development Commands
 
@@ -26,44 +26,47 @@ cp .env.example .env
 ### Running the Application
 ```bash
 # Start the backend API server
-python -m backend.api
+./start_backend.sh
+# Or manually: uvicorn backend.api:app --reload --host 0.0.0.0 --port 8000
 
 # In a separate terminal, launch the web interface
-streamlit run src/frontend/app.py
-
-# Or run frontend using module
-python -m frontend
-
-# Test the chat service directly (for development)
-python -m backend.chat_service
+./start_frontend.sh
+# Or manually: python -m http.server 5500 --directory ./frontend
 
 # Run integration tests
-python tests/test_vitos_pizza_cafe.py
+pytest tests/test_api_integration.py
 ```
 
 ### Testing Security Features
 ```bash
-# Enable AIRS protection by uncommenting lines in vitos_pizza_cafe.py:
-# - Line 217: @check_message_safety
-# - Lines 283-287: safety_check implementation
+# Test AIRS (Palo Alto Networks AI Runtime Security) integration
+pytest tests/test_prisma_airs.py
+
+# The test file demonstrates input/output safety checks using AIRS API
 ```
 
 ## Architecture Overview
 
 ### Core Components
-- **Chat Service** (`src/backend/chat_service.py`): Manages conversation flow with RAG retrieval and React agent execution
-- **RAG System** (`src/backend/knowledge_base.py`): Uses FAISS vector store with Cohere embeddings and reranking for document retrieval
-- **Database Integration** (`src/backend/database.py`): SQLite in-memory database with customer information, accessed via SQLDatabaseToolkit
-- **API Layer** (`src/backend/api.py`): FastAPI REST endpoints for external tool integration
-- **Web Interface** (`src/frontend/app.py`): Streamlit-based chat interface with conversation management
+- **Chat Service** (`backend/chat_service.py`): Manages conversation flow with RAG retrieval and React agent execution
+- **RAG System** (`backend/knowledge_base.py`): Uses FAISS vector store with Cohere embeddings and reranking for document retrieval
+- **Database Integration** (`backend/database.py`): SQLite in-memory database with customer information, accessed via SQLDatabaseToolkit
+- **LLM Module** (`backend/llm.py`): Centralized LLM initialization using ChatOpenAI
+- **MCP Tools** (`backend/mcp_tools.py`): Integration with Model Context Protocol servers (e.g., AMAP)
+- **API Layer** (`backend/api.py`): FastAPI REST endpoints for external tool integration
+- **Web Interface** (`frontend/index.html`, `frontend/script.js`): Lightweight HTML/JS chat interface with conversation management
 
 ### Key Files
-- `src/backend/chat_service.py`: Main chat service with conversation management
-- `src/backend/api.py`: FastAPI backend server with REST endpoints
-- `src/frontend/app.py`: Streamlit web interface
-- `src/backend/knowledge_base.py`: RAG system for document retrieval
-- `src/backend/database.py`: Database integration with SQL tools
-- `tests/backend/`: Comprehensive backend test suite
+- `backend/chat_service.py`: Main chat service with conversation management
+- `backend/api.py`: FastAPI backend server with REST endpoints
+- `backend/llm.py`: LLM initialization and configuration
+- `backend/mcp_tools.py`: MCP tool integration
+- `backend/knowledge_base.py`: RAG system for document retrieval
+- `backend/database.py`: Database integration with SQL tools
+- `backend/config.py`: Configuration management and environment setup
+- `frontend/index.html`: Web interface HTML structure
+- `frontend/script.js`: Frontend JavaScript for chat functionality
+- `tests/`: Test suite including unit and integration tests
 - `Vitos-Pizza-Cafe-KB/`: Knowledge base markdown files for RAG
 - `customer_db.sql`: SQLite database schema with customer data
 
@@ -78,9 +81,13 @@ python tests/test_vitos_pizza_cafe.py
 
 Configure these in `.env`:
 - `COHERE_API_KEY`: For embeddings and reranking
-- `DEEPSEEK_API_KEY`: For LLM responses and tool execution
+- `OPENAI_API_KEY`: For LLM responses and tool execution (supports OpenAI, DeepSeek API, or LiteLLM proxy)
+- `OPENAI_BASE_URL`: Optional, for using DeepSeek or LiteLLM proxy (omit for OpenAI)
 - `X_PAN_TOKEN`: For AIRS security API
+- `AMAP_API_KEY`: Optional, for AMAP MCP tools integration
 - `LANGSMITH_API_KEY`: Optional for tracing
+
+See `.env.example` for detailed configuration examples including LiteLLM proxy setup.
 
 ## Security Testing
 
@@ -106,27 +113,31 @@ The backend provides RESTful API endpoints for external tool integration:
 ## Testing
 
 ```bash
-# Run all backend tests
+# Run all tests
 pytest
 
 # Run specific test categories
-pytest tests/backend/unit/          # Unit tests only
-pytest tests/backend/integration/   # Integration tests only
+pytest tests/unit/                    # Unit tests only
+pytest tests/test_api_integration.py  # API integration tests
+pytest tests/test_prisma_airs.py      # AIRS security tests
+pytest tests/test_litellm_health.py   # LiteLLM proxy health tests
 
 # Run with coverage
-pytest --cov=backend tests/backend/
+pytest --cov=backend tests/
 
-# Run specific test file
-pytest tests/test_vitos_pizza_cafe.py
+# Run specific test file with verbose output
+pytest -v tests/test_api_integration.py
 ```
 
 ## Development Notes
 
 - The vector store index is cached in `Vitos-Pizza-Cafe-KB/faiss_index/`
 - Database runs in-memory and is recreated on each startup
-- Backend API runs on http://localhost:8000 by default
+- Backend API runs on http://localhost:8000 by default (configurable in `start_backend.sh`)
+- Frontend runs on http://localhost:5500 by default (configurable in `start_frontend.sh`)
 - Frontend communicates with backend via HTTP API
-- Security checks can be toggled by commenting/uncommenting decorator lines
+- MCP tools (like AMAP) are automatically loaded if API keys are configured
+- LiteLLM proxy server can be used as an alternative LLM backend (see `litellm/` directory and `.env.example`)
 
 ## Design Principles
 
@@ -137,9 +148,9 @@ This project follows a **pragmatic professional** engineering approach - not ent
 ### Architecture Principles
 
 #### 1. **Separation of Concerns**
-- **Backend (`src/backend/`)**: Business logic, API endpoints, data processing
-- **Frontend (`src/frontend/`)**: UI layer, user interactions
-- **Tests (`tests/backend/`)**: Comprehensive test coverage for backend logic
+- **Backend (`backend/`)**: Business logic, API endpoints, data processing
+- **Frontend (`frontend/`)**: UI layer, user interactions
+- **Tests (`tests/`)**: Comprehensive test coverage for backend logic
 - **Clear boundaries**: Frontend communicates with backend only via HTTP API
 
 #### 2. **API-First Design**
@@ -164,22 +175,31 @@ This project follows a **pragmatic professional** engineering approach - not ent
 
 #### 5. **Module Structure**
 ```
-src/
-├── backend/           # All backend logic
-│   ├── api.py        # FastAPI endpoints
-│   ├── chat_service.py # Core chat functionality
-│   ├── knowledge_base.py # RAG operations
-│   ├── database.py   # Database integration
-│   └── config.py     # Configuration management
-├── frontend/         # UI layer
-└── tests/backend/    # Backend-focused testing
+backend/               # All backend logic
+├── api.py            # FastAPI endpoints
+├── chat_service.py   # Core chat functionality
+├── knowledge_base.py # RAG operations
+├── database.py       # Database integration
+├── llm.py            # LLM initialization
+├── mcp_tools.py      # MCP tool integration
+└── config.py         # Configuration management
+frontend/             # UI layer (HTML/JS/CSS)
+├── index.html        # Main page structure
+├── script.js         # Chat functionality
+└── style.css         # Styling
+tests/                # Testing suite
+├── unit/             # Unit tests
+├── test_api_integration.py
+├── test_prisma_airs.py
+└── test_litellm_health.py
 ```
 
 #### 6. **Dependency Management**
-- **Explicit dependencies**: All external libraries in `requirements.txt`
+- **Explicit dependencies**: All external libraries in `pyproject.toml`
 - **Version pinning**: Specific versions for reproducible builds
 - **Minimal dependencies**: Only add what's actually needed
 - **Clear imports**: Relative imports within packages, absolute for external
+- **Package installation**: Uses `pip install -e .` for editable installation
 
 #### 7. **Error Handling Strategy**
 - **Graceful degradation**: System continues functioning when possible
