@@ -35,6 +35,8 @@ services:
       LITELLM_SALT_KEY: ${LITELLM_SALT_KEY}
       # refer to the litellm_config.yaml for model_list and their respective API keys
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      BAILIAN_API_KEY: ${BAILIAN_API_KEY}
 
       AIRS_API_KEY: ${AIRS_API_KEY}
       AIRS_API_INPUT_PROFILE_NAME: ${AIRS_API_INPUT_PROFILE_NAME}

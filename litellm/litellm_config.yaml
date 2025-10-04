@@ -7,6 +7,53 @@ model_list:
       stream: false
       # guardrails: ["panw-prisma-airs-input-guardrail", "panw-prisma-airs-output-guardrail"]
 
+  - model_name: gpt-5-mini  # user-facing model alias
+    litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
+      model: gpt-5-mini
+      api_base: https://api.openai.com/v1
+      api_key: "os.environ/OPENAI_API_KEY"
+      stream: false
+      guardrails: ["panw-prisma-airs-input-guardrail", "panw-prisma-airs-output-guardrail"]
+
+  - model_name: gpt-5  # user-facing model alias
+    litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
+      model: gpt-5
+      api_base: https://api.openai.com/v1
+      api_key: "os.environ/OPENAI_API_KEY"
+      stream: false
+      # guardrails: ["panw-prisma-airs-input-guardrail", "panw-prisma-airs-output-guardrail"]
+
+  - model_name: qwen-max  # user-facing model alias
+    litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
+      model: dashscope/qwen-max
+      api_base: https://dashscope.aliyuncs.com/compatible-mode/v1
+      api_key: "os.environ/BAILIAN_API_KEY"
+      stream: false
+      # guardrails: ["panw-prisma-airs-input-guardrail", "panw-prisma-airs-output-guardrail"]
+
+  - model_name: qwen-plus  # user-facing model alias
+    litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
+      model: dashscope/qwen-plus
+      api_base: https://dashscope.aliyuncs.com/compatible-mode/v1
+      api_key: "os.environ/BAILIAN_API_KEY"
+      stream: false
+      # guardrails: ["panw-prisma-airs-input-guardrail", "panw-prisma-airs-output-guardrail"]
+
+  - model_name: deepseek-chat  # user-facing model alias
+    litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
+      model: deepseek/deepseek-chat
+      api_key: "os.environ/DEEPSEEK_API_KEY"
+      stream: false
+      # guardrails: ["panw-prisma-airs-input-guardrail", "panw-prisma-airs-output-guardrail"]
+
+  - model_name: deepseek-reasoner  # user-facing model alias
+    litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
+      model: deepseek/deepseek-reasoner
+      api_key: "os.environ/DEEPSEEK_API_KEY"
+      stream: false
+      guardrails: ["panw-prisma-airs-input-guardrail", "panw-prisma-airs-output-guardrail"]
+
+
 guardrails:
   - guardrail_name: "panw-prisma-airs-input-guardrail"
     litellm_params:
@@ -14,7 +61,7 @@ guardrails:
       mode: "pre_call"                    # Run before LLM call
       api_key: "os.environ/AIRS_API_KEY"    # Your PANW API key
       profile_name: "os.environ/AIRS_API_INPUT_PROFILE_NAME"  # Security profile from Strata Cloud Manager
-      default_on: true
+      default_on: false
       # api_base: "https://service.api.aisecurity.paloaltonetworks.com/v1/scan/sync/request"  # Optional
 
   - guardrail_name: "panw-prisma-airs-output-guardrail"
@@ -23,7 +70,7 @@ guardrails:
       mode: "post_call"                    # Run before LLM call
       api_key: "os.environ/AIRS_API_KEY"    # Your PANW API key
       profile_name: "os.environ/AIRS_API_OUTPUT_PROFILE_NAME"  # Security profile from Strata Cloud Manager
-      default_on: true
+      default_on: false
       # api_base: "https://service.api.aisecurity.paloaltonetworks.com/v1/scan/sync/request"  # Optional
 
 general_settings: 
