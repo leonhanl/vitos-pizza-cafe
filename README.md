@@ -6,23 +6,21 @@ A comprehensive demonstration of a pizza cafe customer service application built
 
 This application demonstrates common attack vectors in Gen AI applications, particularly in RAG-based systems, and how to protect against them using Palo Alto Networks AI Runtime Security API. It serves as a practical example of implementing AI security best practices in a real-world scenario.
 
-### Key Attack Vectors Demonstrated:
-
-1. Prompt Injection - Goal Hijacking
-2. Prompt Injection - System Prompt Leak
-3. Sensitive Information Disclosure - PII Leak
-4. Data Poisoning - Malicious URL in Output
-5. Data Poisoning - Toxic Content in Output
-6. Excessive Agency - Database Data Tampering
 
 ## Prerequisites
 
 - Python 3.12 or higher
 - pip package manager
+- Docker and Docker Compose (optional, only needed for LiteLLM proxy)
 - API Keys:
-  - Cohere API Key: Required for text embedding and document reranking
-  - Deepseek API Key: Required for generating responses and executing tool-based actions
-  - Palo Alto Networks AI Runtime Security (AIRS) API Key
+  - **Cohere API Key**: Required for text embedding in RAG system
+  - **LLM Provider API Key**: Choose one of the following:
+    - OpenAI API Key (default)
+    - DeepSeek API Key
+    - OpenRouter API Key
+    - AWS Bedrock credentials
+    - Or use LiteLLM proxy for unified access to multiple providers
+  - **Palo Alto Networks AIRS API Key**: Required for AI security features
 - Palo Alto Networks AI Runtime Security (AIRS) API Profiles for both input and output inspection
 
 ## Application Architecture
@@ -47,7 +45,7 @@ The application consists of the following components:
 - RAG system for information retrieval
     - Chunking based on markdown tags
     - FAISS vector store
-    - Similarity search and reranking based on Cohere models
+    - Similarity search based on Cohere models
 - LangGraph React agent-based conversation flow
 - SQLite Database
 - Database integration using LangChain bind tools
@@ -78,14 +76,14 @@ pip install -e .
 ```bash
 cp .env.example .env
 # Edit .env with your API keys and configuration
-# Cohere API Key is required for both embedding and reranking
+# See .env.example for all available LLM provider options
 ```
 
 ## Running the Application
 
-1. Run the backend:
+1. Start the backend:
    ```bash
-   uvicorn backend.api:app --reload --host 0.0.0.0 --port 8000
+   ./start_backend.sh
    ```
 
    To verify the backend API:
@@ -95,7 +93,7 @@ cp .env.example .env
 
 2. Launch the web interface:
    ```bash
-   python -m http.server 5500 --directory ./frontend      
+   ./start_frontend.sh
    ```
 
    Open a web browser and navigate to: http://localhost:5500
@@ -103,10 +101,69 @@ cp .env.example .env
 3. Try some common questions:
    ```
    What's on the menu?
-   ```
-   ```
    Do you deliver?
    ```
+
+4. Stop the servers when done:
+   ```bash
+   ./stop_backend.sh
+   ./stop_frontend.sh
+   ```
+
+**Note**: The start scripts run servers in the background. Logs are stored in the `logs/` directory with timestamps.
+
+## LiteLLM Proxy (Optional)
+
+LiteLLM is a unified API gateway that allows you to use multiple LLM providers through a single interface. It's particularly useful for:
+
+- **Multi-provider support**: Switch between OpenAI, DeepSeek, Qwen, and other models without code changes
+- **Built-in guardrails**: Optional AIRS security scanning at the proxy level
+- **Cost tracking**: Monitor API usage and costs across different providers
+- **Load balancing**: Distribute requests across multiple models or API keys
+
+### Setup
+
+1. Navigate to the litellm directory and start the proxy:
+   ```bash
+   cd litellm
+   docker-compose up -d
+   ```
+
+2. Configure your application to use the proxy by updating `.env`:
+   ```bash
+   OPENAI_BASE_URL="http://localhost:4000"
+   OPENAI_API_KEY=your_litellm_master_key_here
+   LLM_MODEL=deepseek-chat  # or any model configured in litellm_config.yaml
+   ```
+
+3. The proxy will be available at http://localhost:4000
+
+
+### Supported Models
+
+The LiteLLM proxy comes pre-configured with:
+- **OpenAI**: gpt-5, gpt-5-mini, gpt-5-nano
+- **DeepSeek**: deepseek-chat, deepseek-reasoner
+- **Alibaba Qwen**: qwen-max, qwen-plus
+
+You can add more models by editing `litellm/litellm_config.yaml`.
+
+### AIRS Integration
+
+Some models in the configuration have optional AIRS guardrails enabled. These provide input/output filtering at the proxy level before requests reach your application.
+
+To stop the LiteLLM proxy:
+```bash
+cd litellm
+docker-compose down
+```
+
+To tear down the LiteLLM proxy:
+```bash
+cd litellm
+docker-compose down -v
+```
+
 
 ## API Usage for Red Teaming
 
@@ -136,6 +193,22 @@ For testing multi-turn conversations:
 curl -X POST http://localhost:8000/api/v1/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "What pizzas do you have?", "conversation_id": "test-123"}'
+```
+
+### Python API Client
+
+For programmatic access, use the Python client from `tests/api_client.py`:
+
+```python
+from tests.api_client import VitosApiClient
+
+with VitosApiClient(base_url="http://localhost:8000") as client:
+    # Stateless mode for red teaming
+    response = client.chat("What's on the menu?", stateless=True)
+    print(response)
+
+    # Stateful mode with conversation tracking
+    response = client.chat("What's your special today?", conversation_id="test-123")
 ```
 
 See `tests/test_api_integration.py` for comprehensive examples of both modes.
