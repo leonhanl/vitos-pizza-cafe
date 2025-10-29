@@ -54,8 +54,8 @@ class TestVitosAPI:
         mock_service.aprocess_query.assert_called_once_with("Hello")
 
     @patch('backend.api.get_or_create_chat_service')
-    def test_chat_endpoint_default_conversation(self, mock_get_service):
-        """Test chat request with default conversation ID."""
+    def test_chat_endpoint_auto_generated_conversation(self, mock_get_service):
+        """Test chat request with auto-generated conversation ID."""
         mock_service = Mock()
         mock_service.aprocess_query = AsyncMock(return_value="Response")
         mock_get_service.return_value = mock_service
@@ -66,8 +66,15 @@ class TestVitosAPI:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["conversation_id"] == "default"
-        mock_get_service.assert_called_once_with("default")
+        # Should receive an auto-generated UUID, not "default"
+        assert "conversation_id" in data
+        assert len(data["conversation_id"]) > 0
+        assert data["conversation_id"] != "default"  # Should NOT be "default"
+
+        # Verify service was called with the generated UUID
+        mock_get_service.assert_called_once()
+        called_conv_id = mock_get_service.call_args[0][0]
+        assert called_conv_id == data["conversation_id"]
 
     def test_chat_endpoint_missing_message(self):
         """Test chat request with missing message."""

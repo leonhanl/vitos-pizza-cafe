@@ -3,7 +3,8 @@ const API_URL = 'http://localhost:8000/api/v1';
 const REQUEST_TIMEOUT = 120000; // 120 seconds for MCP tool calls
 
 // Global state
-let currentConversationId = 'default';
+// Note: This will be set to a unique ID when createNewConversation() is called on page load
+let currentConversationId = null;
 
 // Fetch with timeout helper
 async function fetchWithTimeout(url, options = {}, timeout = REQUEST_TIMEOUT) {
@@ -162,7 +163,7 @@ function escapeHtml(text) {
 
 async function createNewConversation() {
     // Delete previous conversation from backend to prevent memory leak
-    if (currentConversationId && currentConversationId !== 'default') {
+    if (currentConversationId) {
         try {
             const response = await fetchWithTimeout(`${API_URL}/conversations/${currentConversationId}`, {
                 method: 'DELETE'

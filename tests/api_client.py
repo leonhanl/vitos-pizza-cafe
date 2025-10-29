@@ -16,15 +16,21 @@ class VitosApiClient:
         self.client = httpx.Client(timeout=120.0)  # Increased timeout for MCP tool calls
         logger.info(f"VitosApiClient initialized with base_url: {self.base_url}")
 
-    def chat(self, message: str, conversation_id: str = "default") -> str:
-        """Send a chat message and get response."""
+    def chat(self, message: str, conversation_id: Optional[str] = None) -> str:
+        """Send a chat message and get response.
+
+        Args:
+            message: The message to send
+            conversation_id: Optional conversation ID. If None, server will create a new conversation.
+        """
         try:
+            payload = {"message": message}
+            if conversation_id is not None:
+                payload["conversation_id"] = conversation_id
+
             response = self.client.post(
                 f"{self.base_url}/api/v1/chat",
-                json={
-                    "message": message,
-                    "conversation_id": conversation_id
-                }
+                json=payload
             )
             response.raise_for_status()
             data = response.json()

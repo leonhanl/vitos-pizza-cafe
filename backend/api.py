@@ -2,6 +2,7 @@
 
 import logging
 from typing import List, Dict, Any, Optional
+from uuid import uuid4
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -33,7 +34,7 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     """Request model for chat endpoint."""
     message: str = Field(..., description="User message to process")
-    conversation_id: Optional[str] = Field(default="default", description="Conversation identifier")
+    conversation_id: Optional[str] = Field(default=None, description="Conversation identifier. Omit to start a new conversation.")
 
 
 class ChatResponse(BaseModel):
@@ -93,19 +94,22 @@ async def health_check():
 async def chat(request: ChatRequest):
     """Main chat endpoint for processing user messages."""
     try:
-        logger.info(f"Chat request: conversation_id={request.conversation_id}, message_length={len(request.message)}")
+        # Auto-generate conversation_id if not provided
+        conversation_id = request.conversation_id or str(uuid4())
+
+        logger.info(f"Chat request: conversation_id={conversation_id}, message_length={len(request.message)}")
 
         # Get or create chat service for the conversation
-        chat_service = get_or_create_chat_service(request.conversation_id)
+        chat_service = get_or_create_chat_service(conversation_id)
 
         # Process the message asynchronously (FastAPI already runs in an event loop)
         response = await chat_service.aprocess_query(request.message)
 
-        logger.info(f"Chat response generated for conversation_id={request.conversation_id}")
+        logger.info(f"Chat response generated for conversation_id={conversation_id}")
 
         return ChatResponse(
             response=response,
-            conversation_id=request.conversation_id
+            conversation_id=conversation_id
         )
 
     except Exception as e:
