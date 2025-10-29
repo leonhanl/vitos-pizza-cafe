@@ -35,7 +35,7 @@ echo "To stop the server, run: ./stop_frontend.sh"
 echo "To view logs in real-time, run: tail -f $LOG_FILE"
 echo ""
 
-nohup python3 -m http.server "$PORT" --directory "$DIR" --bind 127.0.0.1 \
+nohup python3 -m http.server "$PORT" --directory "$DIR" --bind 0.0.0.0 \
     >> "$LOG_FILE" 2>&1 &
 
 # Save process PID
