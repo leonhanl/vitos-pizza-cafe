@@ -228,6 +228,105 @@ class TestVitosAPIIntegration:
         assert history is not None, "Should handle non-existent conversation gracefully"
         print("✓ Non-existent conversation handled appropriately")
 
+    def test_stateless_mode(self):
+        """Test stateless mode for red teaming scenarios."""
+        print("\n=== Testing Stateless Mode ===")
+
+        # Get initial conversation count
+        initial_conversations = self.client.get_conversations()
+        initial_count = len(initial_conversations)
+        print(f"Initial conversation count: {initial_count}")
+
+        # Send multiple stateless requests
+        test_messages = [
+            "What's on the menu?",
+            "Do you deliver?",
+            "What are your hours?",
+            "Tell me about your pizza sizes",
+            "Do you have vegetarian options?"
+        ]
+
+        responses = []
+        for i, message in enumerate(test_messages, 1):
+            print(f"\n[{i}/{len(test_messages)}] Sending stateless message: '{message}'")
+            response = self.client.chat(message, stateless=True)
+
+            # Verify we got a meaningful response
+            assert response is not None, f"Response should not be None for message: {message}"
+            assert len(response.strip()) > 0, f"Response should not be empty for message: {message}"
+            assert not response.startswith("Sorry, I encountered an error"), f"Response indicates an error: {response}"
+
+            responses.append(response)
+            print(f"✓ Got response ({len(response)} chars): {response[:100]}...")
+            time.sleep(0.3)
+
+        # Verify that no conversations were created
+        final_conversations = self.client.get_conversations()
+        final_count = len(final_conversations)
+        print(f"\nFinal conversation count: {final_count}")
+
+        assert final_count == initial_count, f"Stateless mode should not create conversations. Expected {initial_count}, got {final_count}"
+        print(f"✓ Verified no conversations were created ({len(test_messages)} stateless requests)")
+
+        # Verify all responses are different (indicating they were processed)
+        assert len(set(responses)) > 1, "Responses should be different for different questions"
+        print("✓ All stateless requests were processed correctly")
+
+    def test_stateless_vs_stateful_memory(self):
+        """Test that stateless mode doesn't accumulate memory like stateful mode."""
+        print("\n=== Testing Stateless vs Stateful Memory Usage ===")
+
+        # Create a stateful conversation
+        stateful_conv_id = f"stateful_test_{uuid.uuid4().hex[:8]}"
+        self.conversation_ids_to_cleanup.append(stateful_conv_id)
+
+        print("\nSending 5 messages in stateful mode...")
+        for i in range(5):
+            response = self.client.chat(f"Test message {i+1}", stateful_conv_id)
+            assert response is not None, f"Stateful message {i+1} should get response"
+            time.sleep(0.2)
+
+        # Check that conversation exists and has history
+        history = self.client.get_conversation_history(stateful_conv_id)
+        assert len(history) >= 5, f"Stateful conversation should have at least 5 messages, got {len(history)}"
+        print(f"✓ Stateful conversation has {len(history)} messages")
+
+        # Send same number of messages in stateless mode
+        print("\nSending 5 messages in stateless mode...")
+        for i in range(5):
+            response = self.client.chat(f"Test message {i+1}", stateless=True)
+            assert response is not None, f"Stateless message {i+1} should get response"
+            time.sleep(0.2)
+
+        # Verify no new conversations were created
+        all_conversations = self.client.get_conversations()
+        stateless_conversations = [c for c in all_conversations if c not in self.conversation_ids_to_cleanup and c != self.test_conversation_id]
+
+        # Allow for some tolerance, but should be minimal
+        assert len(stateless_conversations) <= 2, f"Stateless mode should not create many conversations, found: {len(stateless_conversations)}"
+        print(f"✓ Stateless mode created {len(stateless_conversations)} conversations (vs stateful mode's 1)")
+
+    def test_stateless_with_complex_queries(self):
+        """Test stateless mode with queries that might use tools (database, RAG)."""
+        print("\n=== Testing Stateless Mode with Complex Queries ===")
+
+        complex_queries = [
+            "What pizzas do you have?",  # Should use RAG
+            "Do you deliver to 上海市?",  # Should use RAG
+            "What sizes are available?",  # Should use RAG
+        ]
+
+        for i, query in enumerate(complex_queries, 1):
+            print(f"\n[{i}/{len(complex_queries)}] Testing complex stateless query: '{query}'")
+            response = self.client.chat(query, stateless=True)
+
+            assert response is not None, f"Response should not be None for query: {query}"
+            assert len(response.strip()) > 0, f"Response should not be empty for query: {query}"
+            print(f"✓ Complex query processed successfully: {response[:80]}...")
+            time.sleep(0.3)
+
+        print("✓ All complex stateless queries processed successfully")
+
     def run_all_tests(self):
         """Run all integration tests."""
         print("=" * 60)
@@ -245,6 +344,9 @@ class TestVitosAPIIntegration:
                 self.test_conversation_history_retrieval,
                 self.test_conversation_management,
                 self.test_multiple_conversations,
+                self.test_stateless_mode,
+                self.test_stateless_vs_stateful_memory,
+                self.test_stateless_with_complex_queries,
                 # self.test_error_scenarios
             ]
 

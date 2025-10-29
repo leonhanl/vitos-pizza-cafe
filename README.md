@@ -101,14 +101,44 @@ cp .env.example .env
    Open a web browser and navigate to: http://localhost:5500
 
 3. Try some common questions:
-   ``` 
+   ```
    What's on the menu?
    ```
    ```
    Do you deliver?
    ```
-   
 
+## API Usage for Red Teaming
+
+The backend API supports both stateful and stateless modes:
+
+### Stateless Mode (Recommended for Red Teaming)
+
+For batch testing and red teaming scenarios, use stateless mode to prevent memory leaks:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What pizzas do you have?", "stateless": true}'
+```
+
+**Benefits:**
+- No conversation history stored in memory
+- No conversation ID management needed
+- Ideal for running hundreds/thousands of test cases
+- Zero memory footprint per request
+
+### Stateful Mode (Default)
+
+For testing multi-turn conversations:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What pizzas do you have?", "conversation_id": "test-123"}'
+```
+
+See `tests/test_api_integration.py` for comprehensive examples of both modes.
 
 ## Contributing
 

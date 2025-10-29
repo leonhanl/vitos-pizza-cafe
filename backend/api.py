@@ -35,12 +35,13 @@ class ChatRequest(BaseModel):
     """Request model for chat endpoint."""
     message: str = Field(..., description="User message to process")
     conversation_id: Optional[str] = Field(default=None, description="Conversation identifier. Omit to start a new conversation.")
+    stateless: Optional[bool] = Field(default=False, description="Process request without storing conversation history. Ideal for red teaming and batch testing.")
 
 
 class ChatResponse(BaseModel):
     """Response model for chat endpoint."""
     response: str = Field(..., description="Assistant response")
-    conversation_id: str = Field(..., description="Conversation identifier")
+    conversation_id: Optional[str] = Field(default=None, description="Conversation identifier (None for stateless requests)")
 
 
 class ConversationHistory(BaseModel):
@@ -92,12 +93,35 @@ async def health_check():
 
 @app.post("/api/v1/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    """Main chat endpoint for processing user messages."""
+    """Main chat endpoint for processing user messages.
+
+    Supports two modes:
+    1. Stateful (default): Maintains conversation history across requests
+    2. Stateless: Processes each request independently without storing history
+    """
     try:
+        # Handle stateless mode - no conversation storage
+        if request.stateless:
+            logger.info(f"Stateless chat request: message_length={len(request.message)}")
+
+            # Import here to avoid circular dependency
+            from .chat_service import ChatService
+
+            # Process without storing conversation
+            response = await ChatService.process_stateless_query(request.message)
+
+            logger.info("Stateless chat response generated")
+
+            return ChatResponse(
+                response=response,
+                conversation_id=None  # No conversation ID for stateless requests
+            )
+
+        # Handle stateful mode - with conversation storage
         # Auto-generate conversation_id if not provided
         conversation_id = request.conversation_id or str(uuid4())
 
-        logger.info(f"Chat request: conversation_id={conversation_id}, message_length={len(request.message)}")
+        logger.info(f"Stateful chat request: conversation_id={conversation_id}, message_length={len(request.message)}")
 
         # Get or create chat service for the conversation
         chat_service = get_or_create_chat_service(conversation_id)
@@ -105,7 +129,7 @@ async def chat(request: ChatRequest):
         # Process the message asynchronously (FastAPI already runs in an event loop)
         response = await chat_service.aprocess_query(request.message)
 
-        logger.info(f"Chat response generated for conversation_id={conversation_id}")
+        logger.info(f"Stateful chat response generated for conversation_id={conversation_id}")
 
         return ChatResponse(
             response=response,

@@ -109,6 +109,63 @@ class ChatService:
         self.conversation_history = []
         logger.info(f"Cleared conversation history for: {self.conversation_id}")
 
+    @staticmethod
+    async def process_stateless_query(user_input: str) -> str:
+        """Process a single query without storing conversation history.
+
+        This is ideal for red teaming and batch testing scenarios where
+        conversation history is not needed and memory usage should be minimized.
+
+        Args:
+            user_input: The user's query to process
+
+        Returns:
+            The assistant's response
+        """
+        logger.info(f"Processing stateless query: {user_input}")
+
+        try:
+            # 1. Retrieve context (mandatory RAG)
+            context = retrieve_context(user_input)
+            logger.debug(f"Retrieved context for stateless query: {user_input}")
+
+            # 2. Get LLM instance
+            llm = get_llm()
+
+            # 3. Get database tools
+            db_tools = get_database_tools(llm)
+
+            # 4. Get MCP tools (async)
+            mcp_tools = await get_mcp_tools()
+
+            # 5. Combine all tools
+            tools = db_tools + mcp_tools
+            logger.info(f"Total tools available: {len(tools)} (DB: {len(db_tools)}, MCP: {len(mcp_tools)})")
+
+            # 6. Create React agent
+            react_agent = create_react_agent(
+                model=llm,
+                tools=tools
+            )
+
+            # 7. Prepare messages (no conversation history)
+            system_message = f"{SYSTEM_PROMPT}\n\n{context}"
+            messages = [
+                SystemMessage(content=system_message),
+                HumanMessage(content=user_input)
+            ]
+
+            # 8. Get response from React agent
+            result = await react_agent.ainvoke({"messages": messages})
+            response = result["messages"][-1].content
+
+            logger.debug(f"Generated stateless response: {response[:100]}...")
+            return response
+
+        except Exception as e:
+            logger.error(f"Error processing stateless query: {e}")
+            return "I apologize, but I encountered an error while processing your request. Please try again or contact our support team."
+
 
 # Global conversation store for API usage
 _conversations: Dict[str, ChatService] = {}
