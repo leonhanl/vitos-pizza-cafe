@@ -28,19 +28,26 @@ cp .env.example .env
 # Start the backend API server
 ./start_backend.sh
 # Or manually: uvicorn backend.api:app --reload --host 0.0.0.0 --port 8000
+# Or as a Python module: python -m backend
 
 # In a separate terminal, launch the web interface
 ./start_frontend.sh
 # Or manually: python -m http.server 5500 --directory ./frontend
 
+# Stop the servers (they run in background and create .pid files)
+./stop_backend.sh
+./stop_frontend.sh
+
 # Run integration tests
-pytest tests/test_api_integration.py
+python tests/test_api_integration.py
 ```
+
+**Note**: The start scripts run servers in the background and create `.pid` files (backend.pid, frontend.pid) for process management. Logs are stored in the `logs/` directory with timestamps.
 
 ### Testing Security Features
 ```bash
 # Test AIRS (Palo Alto Networks AI Runtime Security) integration
-pytest tests/test_prisma_airs.py
+python tests/test_prisma_airs.py
 
 # The test file demonstrates input/output safety checks using AIRS API
 ```
@@ -57,6 +64,8 @@ pytest tests/test_prisma_airs.py
 - **Web Interface** (`frontend/index.html`, `frontend/script.js`): Lightweight HTML/JS chat interface with conversation management
 
 ### Key Files
+
+**Backend**:
 - `backend/chat_service.py`: Main chat service with conversation management
 - `backend/api.py`: FastAPI backend server with REST endpoints
 - `backend/llm.py`: LLM initialization and configuration
@@ -64,11 +73,36 @@ pytest tests/test_prisma_airs.py
 - `backend/knowledge_base.py`: RAG system for document retrieval
 - `backend/database.py`: Database integration with SQL tools
 - `backend/config.py`: Configuration management and environment setup
+- `backend/__main__.py`: Module entry point (enables `python -m backend`)
+
+**Frontend**:
 - `frontend/index.html`: Web interface HTML structure
 - `frontend/script.js`: Frontend JavaScript for chat functionality
-- `tests/`: Test suite including unit and integration tests
+- `frontend/style.css`: Web interface styling
+
+**Testing**:
+- `tests/api_client.py`: Python HTTP client for backend API (used for programmatic access and red teaming)
+- `tests/unit/`: Unit tests for backend components
+- `tests/test_api_integration.py`: API endpoint integration tests
+- `tests/test_prisma_airs.py`: AIRS security integration tests
+- `tests/test_litellm_health.py`: LiteLLM proxy health check tests
+
+**Data & Configuration**:
 - `Vitos-Pizza-Cafe-KB/`: Knowledge base markdown files for RAG
 - `customer_db.sql`: SQLite database schema with customer data
+- `.env.example`: Environment variable configuration template
+- `pyproject.toml`: Python package dependencies and metadata
+
+**Scripts**:
+- `start_backend.sh`: Start backend server in background
+- `stop_backend.sh`: Stop backend server gracefully
+- `start_frontend.sh`: Start frontend server in background
+- `stop_frontend.sh`: Stop frontend server gracefully
+
+**Documentation & Diagrams**:
+- `README.md`: Main project documentation with test cases
+- `CLAUDE.md`: Developer guidance for Claude Code (this file)
+- `diagrams/`: Architecture diagrams and Excalidraw files
 
 ### Data Flow
 1. User input → AIRS security check (optional)
@@ -79,14 +113,67 @@ pytest tests/test_prisma_airs.py
 ## API Keys Required
 
 Configure these in `.env`:
-- `COHERE_API_KEY`: For embeddings only
-- `OPENAI_API_KEY`: For LLM responses and tool execution (supports OpenAI, DeepSeek API, or LiteLLM proxy)
-- `OPENAI_BASE_URL`: Optional, for using DeepSeek or LiteLLM proxy (omit for OpenAI)
-- `X_PAN_TOKEN`: For AIRS security API
-- `AMAP_API_KEY`: Optional, for AMAP MCP tools integration
-- `LANGSMITH_API_KEY`: Optional for tracing
 
-See `.env.example` for detailed configuration examples including LiteLLM proxy setup.
+### Required Keys
+- `COHERE_API_KEY`: For document embeddings in RAG system
+- `OPENAI_API_KEY`: For LLM responses and tool execution
+- `X_PAN_TOKEN`: For Palo Alto Networks AIRS security API
+
+### LLM Configuration
+The application supports multiple LLM providers via OpenAI-compatible APIs:
+
+**OpenAI** (default):
+```bash
+OPENAI_API_KEY=your_openai_api_key_here
+LLM_MODEL=gpt-5-nano  # or gpt-5, gpt-5-mini
+# OPENAI_BASE_URL not needed for OpenAI
+```
+
+**DeepSeek**:
+```bash
+OPENAI_API_KEY=your_deepseek_api_key_here
+OPENAI_BASE_URL="https://api.deepseek.com/v1"
+LLM_MODEL=deepseek-chat
+```
+
+**LiteLLM Proxy** (supports multiple models):
+```bash
+OPENAI_API_KEY=your_litellm_api_key_here
+OPENAI_BASE_URL="http://localhost:4000"
+LLM_MODEL=deepseek/deepseek-chat
+```
+
+**OpenRouter**:
+```bash
+OPENAI_API_KEY=your_openrouter_api_key_here
+OPENAI_BASE_URL="https://openrouter.ai/api/v1"
+LLM_MODEL="openai/gpt-5-mini"
+```
+
+**AWS Bedrock**:
+```bash
+OPENAI_API_KEY=your_bedrock_api_key_here
+OPENAI_BASE_URL="https://bedrock-runtime.us-west-2.amazonaws.com/openai/v1"
+LLM_MODEL="deepseek.v3-v1:0"
+```
+
+### AIRS (AI Runtime Security) Configuration
+- `X_PAN_TOKEN`: Authentication token for AIRS API
+- `X_PAN_AI_MODEL`: Model name for AIRS (e.g., `gpt-5-mini`)
+- `X_PAN_APP_NAME`: Application name for AIRS reporting (default: `'Vitos Pizza Cafe'`)
+- `X_PAN_APP_USER`: User identifier for AIRS (default: `'Vitos-Admin'`)
+- `X_PAN_INPUT_CHECK_PROFILE_NAME`: AIRS profile for input validation (default: `'Demo-Profile-for-Input'`)
+- `X_PAN_OUTPUT_CHECK_PROFILE_NAME`: AIRS profile for output validation (default: `'Demo-Profile-for-Output'`)
+
+### Optional Services
+- `AMAP_API_KEY`: For AMAP MCP tools integration (location services)
+- `LANGSMITH_API_KEY`: For LangSmith tracing and debugging
+- `LANGSMITH_TRACING`: Set to `true` to enable tracing, `false` to disable
+- `LANGSMITH_ENDPOINT`: LangSmith API endpoint (default: `https://api.smith.langchain.com`)
+- `LANGSMITH_PROJECT`: Project name for organizing traces (default: `vitos-pizza-cafe`)
+- `LOG_LEVEL`: Logging verbosity (default: `INFO`)
+
+See `.env.example` for complete configuration examples.
 
 ## Security Testing
 
@@ -109,6 +196,37 @@ The backend provides RESTful API endpoints for external tool integration:
 - `POST /api/v1/conversations/{id}/clear` - Clear conversation history
 - `GET /api/v1/health` - Health check endpoint
 
+### Programmatic API Access
+
+The `tests/api_client.py` module provides a Python client (`VitosApiClient`) for programmatic interaction with the backend API. This is particularly useful for:
+
+- **Red teaming and security testing**: Automated attack scenario testing
+- **External tool integration**: Integrate with other security tools and frameworks
+- **Batch processing**: Process multiple test cases programmatically
+- **Stateless testing**: Use `stateless=True` parameter to test without conversation history
+
+Example usage:
+```python
+from tests.api_client import VitosApiClient
+
+# Initialize client
+with VitosApiClient(base_url="http://localhost:8000") as client:
+    # Health check
+    if client.health_check():
+        # Send a message (stateless mode for red teaming)
+        response = client.chat("What's on the menu?", stateless=True)
+        print(response)
+
+        # Or with conversation tracking
+        response = client.chat("What's your special today?", conversation_id="test-123")
+
+        # Get conversation history
+        history = client.get_conversation_history("test-123")
+
+        # Clean up
+        client.delete_conversation("test-123")
+```
+
 ## Testing
 
 ```bash
@@ -117,19 +235,15 @@ pytest
 
 # Run specific test categories
 pytest tests/unit/                    # Unit tests only
-pytest tests/test_api_integration.py  # API integration tests
-pytest tests/test_prisma_airs.py      # AIRS security tests
-pytest tests/test_litellm_health.py   # LiteLLM proxy health tests
+python tests/test_api_integration.py  # API integration tests
+python tests/test_prisma_airs.py      # AIRS security tests
+python tests/test_litellm_health.py   # LiteLLM proxy health tests
 
-# Run with coverage
-pytest --cov=backend tests/
-
-# Run specific test file with verbose output
-pytest -v tests/test_api_integration.py
 ```
 
 ## Development Notes
 
+### Runtime Behavior
 - The vector store index is cached in `Vitos-Pizza-Cafe-KB/faiss_index/`
 - Database runs in-memory and is recreated on each startup
 - Backend API runs on http://localhost:8000 by default (configurable in `start_backend.sh`)
@@ -137,6 +251,62 @@ pytest -v tests/test_api_integration.py
 - Frontend communicates with backend via HTTP API
 - MCP tools (like AMAP) are automatically loaded if API keys are configured
 - LiteLLM proxy server can be used as an alternative LLM backend (see `litellm/` directory and `.env.example`)
+
+### Process Management
+- Start scripts (`start_backend.sh`, `start_frontend.sh`) run servers in the background
+- Process IDs are stored in `.pid` files (`backend.pid`, `frontend.pid`) in the project root
+- Use stop scripts (`stop_backend.sh`, `stop_frontend.sh`) to gracefully shut down servers
+- PID files are automatically cleaned up on server shutdown
+
+### Logging and Debugging
+- Server logs are stored in the `logs/` directory with timestamp-based filenames
+- Log format: `backend-YYYY-MM-DD_HH-MM-SS.log` and `frontend-YYYY-MM-DD_HH-MM-SS.log`
+- Log level can be configured via `LOG_LEVEL` environment variable (default: INFO)
+- Enable LangSmith tracing for detailed conversation flow debugging
+
+### Project Directories
+- `logs/`: Timestamped server log files (created by start scripts)
+- `temp/`: Temporary files and test artifacts
+- `diagrams/`: Architecture diagrams and Excalidraw files
+- `Vitos-Pizza-Cafe-KB/faiss_index/`: Cached vector store index files
+
+### LiteLLM Proxy Server (Optional)
+
+The `litellm/` directory contains a complete LiteLLM proxy server setup with Docker Compose:
+
+**Components**:
+- **LiteLLM Proxy**: Unified API gateway for multiple LLM providers
+- **PostgreSQL Database**: Stores conversation logs and configuration
+- **Built-in Guardrails**: Optional AIRS integration at the proxy level
+
+**Configuration Files**:
+- `litellm/docker-compose.yml`: Docker services for LiteLLM proxy and PostgreSQL
+- `litellm/litellm_config.yaml`: Model configurations and AIRS guardrails
+
+**Supported Models** (configured in litellm_config.yaml):
+- OpenAI models (gpt-5, gpt-5-mini, gpt-5-nano)
+- DeepSeek models (deepseek-chat, deepseek-reasoner)
+- Alibaba Qwen models (qwen-max, qwen-plus via DashScope)
+
+**Features**:
+- Model aliasing and unified API interface
+- Optional AIRS guardrails per model (input/output filtering)
+- PostgreSQL-backed conversation logging
+- Health monitoring and detailed debug logging
+
+**Usage**:
+```bash
+# Start LiteLLM proxy with docker-compose
+cd litellm
+docker-compose up -d
+
+# Configure your application to use the proxy
+OPENAI_BASE_URL="http://localhost:4000"
+OPENAI_API_KEY=your_litellm_master_key_here
+LLM_MODEL=deepseek-chat  # or any model defined in litellm_config.yaml
+```
+
+See `.env.example` for complete LiteLLM environment variable configuration.
 
 ## Design Principles
 
