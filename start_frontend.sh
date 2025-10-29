@@ -3,20 +3,48 @@ set -euo pipefail
 
 PORT=5500
 DIR=./frontend
+PID_FILE="frontend.pid"
 
-# 起一个本地静态服务器到后台
-python3 -m http.server "$PORT" --directory "$DIR" --bind 127.0.0.1 &
-SERVER_PID=$!
+# Create logs directory
+LOGS_DIR="logs"
+mkdir -p "$LOGS_DIR"
 
-# 清理：脚本被中断时关掉后台服务器
-cleanup() { kill $SERVER_PID 2>/dev/null || true; }
-trap cleanup EXIT INT TERM
+# Generate timestamp
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+LOG_FILE="${LOGS_DIR}/frontend_${TIMESTAMP}.log"
 
-# 稍等片刻确保端口起来
+# Check if process is already running
+if [ -f "$PID_FILE" ]; then
+    OLD_PID=$(cat "$PID_FILE")
+    if ps -p "$OLD_PID" > /dev/null 2>&1; then
+        echo "Frontend is already running with PID $OLD_PID"
+        echo "Please stop it first using ./stop_frontend.sh"
+        exit 1
+    else
+        # Clean up stale PID file
+        rm -f "$PID_FILE"
+    fi
+fi
+
+# Start HTTP server in background
+echo "Starting frontend server in background on http://localhost:${PORT} ..."
+echo "Logs will be written to: $LOG_FILE"
+echo "PID file: $PID_FILE"
+echo ""
+echo "To stop the server, run: ./stop_frontend.sh"
+echo "To view logs in real-time, run: tail -f $LOG_FILE"
+echo ""
+
+nohup python3 -m http.server "$PORT" --directory "$DIR" --bind 127.0.0.1 \
+    >> "$LOG_FILE" 2>&1 &
+
+# Save process PID
+echo $! > "$PID_FILE"
+
+echo "Frontend started successfully with PID $(cat $PID_FILE)"
+
+# Wait a moment to ensure server is up
 sleep 1
 
-# 打开正确端口的页面
+# Open browser
 open -a "Google Chrome" "http://localhost:${PORT}"
-
-# 如果你希望脚本一直挂着直到 Ctrl+C：
-wait $SERVER_PID
