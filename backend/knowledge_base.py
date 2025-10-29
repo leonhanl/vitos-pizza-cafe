@@ -5,7 +5,6 @@ import logging
 from functools import lru_cache
 from typing import List
 
-import cohere
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import TextLoader
 from langchain_cohere import CohereEmbeddings
@@ -114,18 +113,8 @@ def retrieve_context(user_query: str) -> str:
         logger.warning("No relevant context found from the knowledge base")
         return "<context>\nNo relevant context found from the knowledge base.\n</context>"
 
-    # Use Cohere API for reranking
-    co = cohere.Client(Config.COHERE_API_KEY)
-    rerank_results = co.rerank(
-        model=Config.RERANK_MODEL,
-        query=user_query,
-        documents=[doc.page_content for doc in filtered_docs],
-        top_n=Config.RERANK_TOP_N
-    )
-
-    reranked_docs = []
-    for i in range(len(rerank_results.results)):
-        reranked_docs.append(filtered_docs[rerank_results.results[i].index])
+    # Take top N documents based on similarity scores (no reranking)
+    reranked_docs = filtered_docs[:Config.RERANK_TOP_N]
 
     context_content = "\n".join([doc.page_content for doc in reranked_docs])
     context_message = f"<context>\n{context_content}\n</context>"

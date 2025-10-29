@@ -49,7 +49,7 @@ pytest tests/test_prisma_airs.py
 
 ### Core Components
 - **Chat Service** (`backend/chat_service.py`): Manages conversation flow with RAG retrieval and React agent execution
-- **RAG System** (`backend/knowledge_base.py`): Uses FAISS vector store with Cohere embeddings and reranking for document retrieval
+- **RAG System** (`backend/knowledge_base.py`): Uses FAISS vector store with Cohere embeddings for document retrieval
 - **Database Integration** (`backend/database.py`): SQLite in-memory database with customer information, accessed via SQLDatabaseToolkit
 - **LLM Module** (`backend/llm.py`): Centralized LLM initialization using ChatOpenAI
 - **MCP Tools** (`backend/mcp_tools.py`): Integration with Model Context Protocol servers (e.g., AMAP)
@@ -72,15 +72,14 @@ pytest tests/test_prisma_airs.py
 
 ### Data Flow
 1. User input → AIRS security check (optional)
-2. Vector similarity search in knowledge base
-3. Cohere reranking of retrieved documents
-4. LLM generation with context and optional database queries
-5. Response → AIRS output safety check (optional)
+2. Vector similarity search in knowledge base (retrieves top N documents)
+3. LLM generation with context and optional database queries
+4. Response → AIRS output safety check (optional)
 
 ## API Keys Required
 
 Configure these in `.env`:
-- `COHERE_API_KEY`: For embeddings and reranking
+- `COHERE_API_KEY`: For embeddings only
 - `OPENAI_API_KEY`: For LLM responses and tool execution (supports OpenAI, DeepSeek API, or LiteLLM proxy)
 - `OPENAI_BASE_URL`: Optional, for using DeepSeek or LiteLLM proxy (omit for OpenAI)
 - `X_PAN_TOKEN`: For AIRS security API
