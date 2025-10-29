@@ -1,5 +1,12 @@
 // API base URL - use backend API endpoints
-const API_URL = 'http://localhost:8000/api/v1';
+// Dynamically construct the backend URL based on current hostname
+// This allows the frontend to work both locally and on remote servers
+const getApiUrl = () => {
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol; // http: or https:
+    return `${protocol}//${hostname}:8000/api/v1`;
+};
+const API_URL = getApiUrl();
 const REQUEST_TIMEOUT = 120000; // 120 seconds for MCP tool calls
 
 // Global state
