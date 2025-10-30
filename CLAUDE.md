@@ -56,7 +56,7 @@ python tests/test_prisma_airs.py
 
 ### Core Components
 - **Chat Service** (`backend/chat_service.py`): Manages conversation flow with RAG retrieval and React agent execution
-- **RAG System** (`backend/knowledge_base.py`): Uses FAISS vector store with Cohere embeddings for document retrieval
+- **RAG System** (`backend/knowledge_base.py`): Uses FAISS vector store with AWS Bedrock Amazon Titan embeddings for document retrieval
 - **Database Integration** (`backend/database.py`): SQLite in-memory database with customer information, accessed via SQLDatabaseToolkit
 - **LLM Module** (`backend/llm.py`): Centralized LLM initialization using ChatOpenAI
 - **MCP Tools** (`backend/mcp_tools.py`): Integration with Model Context Protocol servers (e.g., AMAP)
@@ -115,7 +115,12 @@ python tests/test_prisma_airs.py
 Configure these in `.env`:
 
 ### Required Keys
-- `COHERE_API_KEY`: For document embeddings in RAG system
+- **AWS Bedrock Configuration**: For document embeddings in RAG system (Amazon Titan Text Embeddings v2)
+  - `AWS_REGION`: AWS region for Bedrock (e.g., `us-east-1`)
+  - AWS credentials via standard boto3 credential chain:
+    - Environment variables: `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`, or
+    - AWS profile: `AWS_PROFILE`, or
+    - IAM roles (for EC2/ECS deployments)
 - `OPENAI_API_KEY`: For LLM responses and tool execution
 - `X_PAN_TOKEN`: For Palo Alto Networks AIRS security API
 
@@ -335,7 +340,7 @@ This project follows a **pragmatic professional** engineering approach - not ent
 - **YAGNI principle**: Don't add features until actually needed
 
 #### 4. **Testability First**
-- **Mockable dependencies**: External APIs (Cohere, DeepSeek) can be mocked for testing
+- **Mockable dependencies**: External APIs (AWS Bedrock, DeepSeek) can be mocked for testing
 - **Unit tests**: Test business logic in isolation
 - **Integration tests**: Test API endpoints end-to-end
 - **Test structure**: Separate unit and integration test directories
