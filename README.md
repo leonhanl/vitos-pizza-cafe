@@ -27,7 +27,7 @@ This application demonstrates common attack vectors in Gen AI applications, part
 
 ### System Overview
     
-![Application Architecture](diagrams/vitos_architecture.jpg)
+![Application Architecture](diagrams/vitos_architecture.png)
 
 ### Message Processing Flow
 
