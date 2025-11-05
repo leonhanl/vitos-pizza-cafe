@@ -11,9 +11,9 @@ PID_FILE="backend.pid"
 LOGS_DIR="logs"
 mkdir -p "$LOGS_DIR"
 
-# Generate timestamp
-TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-LOG_FILE="${LOGS_DIR}/backend_${TIMESTAMP}.log"
+# Use simple log file name and remove old log
+LOG_FILE="${LOGS_DIR}/backend.log"
+rm -f "$LOG_FILE"
 
 # Check if process is already running
 if [ -f "$PID_FILE" ]; then
