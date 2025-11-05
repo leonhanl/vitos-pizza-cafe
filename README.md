@@ -129,6 +129,8 @@ LiteLLM is a unified API gateway that allows you to use multiple LLM providers t
    docker-compose up -d
    ```
 
+   Open a browser, and visit: http://localhost:4000/ui/
+
 2. Configure your application to use the proxy by updating `.env`:
    ```bash
    OPENAI_BASE_URL="http://localhost:4000"
