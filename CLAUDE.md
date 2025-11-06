@@ -123,6 +123,31 @@ The RAG system uses OpenAI embeddings for document retrieval. Configure via:
 - `EMBEDDING_MODEL`: OpenAI embedding model (default: `text-embedding-3-small`)
   - Options: `text-embedding-3-small`, `text-embedding-3-large`, `text-embedding-ada-002`
 
+**Default Behavior**:
+- Embeddings default to OpenAI's official endpoint (`https://api.openai.com/v1`)
+- Both `OPENAI_BASE_URL` and `OPENAI_EMBEDDING_BASE_URL` default to OpenAI if not set
+- This ensures embeddings work even when using alternative LLM providers
+
+**Separate Embedding Credentials** (optional):
+To use different providers for LLM and embeddings:
+- `OPENAI_EMBEDDING_API_KEY`: Separate API key for embeddings (defaults to `OPENAI_API_KEY`)
+- `OPENAI_EMBEDDING_BASE_URL`: Separate base URL for embeddings (defaults to `https://api.openai.com/v1`, **NOT** to `OPENAI_BASE_URL`)
+
+**Important**: `OPENAI_EMBEDDING_BASE_URL` does NOT cascade to `OPENAI_BASE_URL`. This prevents errors when using LLM providers (like DeepSeek) that don't support OpenAI embedding models.
+
+**Use Case Example**: DeepSeek for LLM + OpenAI for embeddings
+```bash
+# LLM uses DeepSeek
+OPENAI_API_KEY=sk-deepseek-...
+OPENAI_BASE_URL="https://api.deepseek.com/v1"
+LLM_MODEL=deepseek-chat
+
+# Embeddings use native OpenAI (explicit key, URL defaults to OpenAI)
+OPENAI_EMBEDDING_API_KEY=sk-proj-...
+EMBEDDING_MODEL=text-embedding-3-small
+# OPENAI_EMBEDDING_BASE_URL not needed - defaults to OpenAI
+```
+
 ### LLM Configuration
 The application supports multiple LLM providers via OpenAI-compatible APIs:
 

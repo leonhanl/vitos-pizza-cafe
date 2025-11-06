@@ -66,7 +66,9 @@ def setup_knowledge_base(directory_path: str = None) -> FAISS:
 
     index_file_path = os.path.join(directory_path, "faiss_index")
     embeddings = OpenAIEmbeddings(
-        model=Config.EMBEDDING_MODEL
+        model=Config.EMBEDDING_MODEL,
+        api_key=Config.OPENAI_EMBEDDING_API_KEY,
+        base_url=Config.OPENAI_EMBEDDING_BASE_URL
     )
 
     if os.path.exists(index_file_path):

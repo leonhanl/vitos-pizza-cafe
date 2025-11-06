@@ -8,13 +8,24 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+# OpenAI API Default Base URL
+# This is OpenAI's official endpoint. If OpenAI changes this, they'll maintain
+# backward compatibility on v1 and update their SDK accordingly.
+OPENAI_DEFAULT_BASE_URL = "https://api.openai.com/v1"
+
 class Config:
     """Application configuration settings."""
 
     # Required API Keys
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL") or OPENAI_DEFAULT_BASE_URL
     AMAP_API_KEY = os.getenv("AMAP_API_KEY")
 
+    # Embedding API Configuration
+    # Note: OPENAI_EMBEDDING_BASE_URL defaults to OpenAI's endpoint, NOT to OPENAI_BASE_URL
+    # This prevents errors when LLM uses a provider that doesn't support OpenAI embeddings
+    OPENAI_EMBEDDING_API_KEY = os.getenv("OPENAI_EMBEDDING_API_KEY") or OPENAI_API_KEY
+    OPENAI_EMBEDDING_BASE_URL = os.getenv("OPENAI_EMBEDDING_BASE_URL") or OPENAI_DEFAULT_BASE_URL
 
     # Optional API Keys
     LANGSMITH_API_KEY = os.getenv("LANGSMITH_API_KEY")

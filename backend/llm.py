@@ -18,11 +18,12 @@ def get_llm():
     """
     llm = ChatOpenAI(
         model=Config.LLM_MODEL,
+        base_url=Config.OPENAI_BASE_URL,
         temperature=Config.LLM_TEMPERATURE,
         max_tokens=None,
         timeout=None,
         max_retries=Config.LLM_MAX_RETRIES,
     )
 
-    logger.info(f"LLM initialized: {Config.LLM_MODEL}")
+    logger.info(f"LLM initialized: {Config.LLM_MODEL} at {Config.OPENAI_BASE_URL}")
     return llm
