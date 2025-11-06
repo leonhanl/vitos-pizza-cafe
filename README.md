@@ -13,9 +13,8 @@ This application demonstrates common attack vectors in Gen AI applications, part
 - pip package manager
 - Docker and Docker Compose (optional, only needed for LiteLLM proxy)
 - API Keys:
-  - **AWS Bedrock Credentials**: Required for text embedding in RAG system (Amazon Titan Text Embeddings v2)
-  - **LLM Provider API Key**: Choose one of the following:
-    - OpenAI API Key (default)
+  - **OpenAI API Key**: Required for text embedding in RAG system and LLM responses
+  - **Additional LLM Provider Options** (if not using OpenAI for LLM):
     - DeepSeek API Key
     - OpenRouter API Key
     - AWS Bedrock credentials
@@ -45,7 +44,7 @@ The application consists of the following components:
 - RAG system for information retrieval
     - Chunking based on markdown tags
     - FAISS vector store
-    - Similarity search based on AWS Bedrock Amazon Titan embeddings
+    - Similarity search based on OpenAI embeddings (text-embedding-3-small)
 - LangGraph React agent-based conversation flow
 - SQLite Database
 - Database integration using LangChain bind tools

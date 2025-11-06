@@ -15,8 +15,6 @@ class Config:
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     AMAP_API_KEY = os.getenv("AMAP_API_KEY")
 
-    # AWS Bedrock Configuration
-    AWS_REGION = os.getenv("AWS_REGION", "us-west-2")
 
     # Optional API Keys
     LANGSMITH_API_KEY = os.getenv("LANGSMITH_API_KEY")
@@ -35,7 +33,7 @@ class Config:
     LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "2"))
 
     # Embedding Configuration
-    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "amazon.titan-embed-text-v2:0")
+    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
     RERANK_MODEL = os.getenv("RERANK_MODEL", "rerank-english-v3.0")
 
     # RAG Configuration
@@ -64,8 +62,7 @@ class Config:
     def validate_required_vars(cls):
         """Validate that all required environment variables are set."""
         required_vars = [
-            "OPENAI_API_KEY",
-            "AWS_REGION"
+            "OPENAI_API_KEY"
         ]
 
         missing_vars = [var for var in required_vars if not getattr(cls, var)]

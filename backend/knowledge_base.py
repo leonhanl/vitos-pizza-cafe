@@ -7,7 +7,7 @@ from typing import List
 
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import TextLoader
-from langchain_aws import BedrockEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import (
     MarkdownHeaderTextSplitter,
     RecursiveCharacterTextSplitter
@@ -65,9 +65,8 @@ def setup_knowledge_base(directory_path: str = None) -> FAISS:
         directory_path = Config.KNOWLEDGE_BASE_PATH
 
     index_file_path = os.path.join(directory_path, "faiss_index")
-    embeddings = BedrockEmbeddings(
-        model_id=Config.EMBEDDING_MODEL,
-        region_name=Config.AWS_REGION
+    embeddings = OpenAIEmbeddings(
+        model=Config.EMBEDDING_MODEL
     )
 
     if os.path.exists(index_file_path):
