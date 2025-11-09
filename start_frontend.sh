@@ -17,6 +17,9 @@ rm -f "$LOG_FILE"
 echo "Generating frontend configuration..."
 ./scripts/generate_frontend_config.sh
 
+# Get the backend API URL (with default)
+BACKEND_API_URL_DISPLAY="${BACKEND_API_URL:-http://localhost:8000}"
+
 # Check if process is already running
 if [ -f "$PID_FILE" ]; then
     OLD_PID=$(cat "$PID_FILE")
@@ -31,7 +34,9 @@ if [ -f "$PID_FILE" ]; then
 fi
 
 # Start HTTP server in background
-echo "Starting frontend server in background on http://localhost:${PORT} ..."
+echo "Starting frontend server in background..."
+echo "  Frontend hosting: http://localhost:${PORT}"
+echo "  Backend API URL: ${BACKEND_API_URL_DISPLAY}"
 echo "Logs will be written to: $LOG_FILE"
 echo "PID file: $PID_FILE"
 echo ""
@@ -50,5 +55,7 @@ echo "Frontend started successfully with PID $(cat $PID_FILE)"
 # Wait a moment to ensure server is up
 sleep 1
 
-# Open browser
-open -a "Google Chrome" "http://localhost:${PORT}"
+# Open browser (only on macOS)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    open -a "Google Chrome" "http://localhost:${PORT}" 2>/dev/null || open "http://localhost:${PORT}"
+fi
