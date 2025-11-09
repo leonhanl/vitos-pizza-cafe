@@ -185,3 +185,6 @@ Vitos-Pizza-Cafe-KB/faiss_index/
 # ignore the temp directory
 temp/
 *.pid
+
+# Frontend configuration (auto-generated)
+frontend/config.js

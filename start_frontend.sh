@@ -13,6 +13,10 @@ mkdir -p "$LOGS_DIR"
 LOG_FILE="${LOGS_DIR}/frontend.log"
 rm -f "$LOG_FILE"
 
+# Generate frontend configuration from environment variables
+echo "Generating frontend configuration..."
+./scripts/generate_frontend_config.sh
+
 # Check if process is already running
 if [ -f "$PID_FILE" ]; then
     OLD_PID=$(cat "$PID_FILE")

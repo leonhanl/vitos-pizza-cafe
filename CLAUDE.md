@@ -44,6 +44,25 @@ python tests/test_api_integration.py
 
 **Note**: The start scripts run servers in the background and create `.pid` files (backend.pid, frontend.pid) for process management. Logs are stored in the `logs/` directory with timestamps.
 
+**Frontend Configuration for Different Domains**: If your frontend and backend are deployed on different domains, configure the backend API URL using the `BACKEND_API_URL` environment variable:
+
+```bash
+# Option 1: Inline with start_frontend.sh
+BACKEND_API_URL="https://vitos-api.lianglab.net" ./start_frontend.sh
+
+# Option 2: Inline with restart_frontend.sh
+BACKEND_API_URL="https://vitos-api.lianglab.net" ./restart_frontend.sh
+
+# Option 3: Using export for multiple commands
+export BACKEND_API_URL="https://vitos-api.lianglab.net"
+./start_frontend.sh  # or ./restart_frontend.sh
+```
+
+**Notes**:
+- Do not include the `/api/v1` suffix - it will be added automatically
+- If not set, defaults to `http://localhost:8000`
+- Configuration is auto-generated into `frontend/config.js` by `scripts/generate_frontend_config.sh` (called automatically)
+
 ### Testing Security Features
 ```bash
 # Test AIRS (Palo Alto Networks AI Runtime Security) integration
@@ -277,7 +296,8 @@ python tests/test_litellm_health.py   # LiteLLM proxy health tests
 - Database runs in-memory and is recreated on each startup
 - Backend API runs on http://localhost:8000 by default (configurable in `start_backend.sh`)
 - Frontend runs on http://localhost:5500 by default (configurable in `start_frontend.sh`)
-- Frontend communicates with backend via HTTP API
+- Frontend communicates with backend via HTTP API (backend URL configurable via `BACKEND_API_URL` env var)
+- Frontend configuration is auto-generated at startup into `frontend/config.js` (gitignored)
 - MCP tools (like AMAP) are automatically loaded if API keys are configured
 - LiteLLM proxy server can be used as an alternative LLM backend (see `litellm/` directory and `.env.example`)
 

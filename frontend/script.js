@@ -1,7 +1,16 @@
 // API base URL - use backend API endpoints
-// Dynamically construct the backend URL based on current hostname
-// This allows the frontend to work both locally and on remote servers
+// Supports configuration via window.VITOS_CONFIG.BACKEND_API_URL (set by config.js)
+// Falls back to dynamically constructing URL based on current hostname
 const getApiUrl = () => {
+    // Check if configuration is available (from config.js)
+    if (window.VITOS_CONFIG && window.VITOS_CONFIG.BACKEND_API_URL) {
+        const backendUrl = window.VITOS_CONFIG.BACKEND_API_URL;
+        // Remove trailing slash if present
+        const cleanUrl = backendUrl.endsWith('/') ? backendUrl.slice(0, -1) : backendUrl;
+        return `${cleanUrl}/api/v1`;
+    }
+
+    // Fallback: dynamically construct based on current page location
     const hostname = window.location.hostname;
     const protocol = window.location.protocol; // http: or https:
     return `${protocol}//${hostname}:8000/api/v1`;

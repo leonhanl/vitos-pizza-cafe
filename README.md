@@ -111,6 +111,31 @@ cp .env.example .env
 
 **Note**: The start scripts run servers in the background. Logs are stored in the `logs/` directory with timestamps.
 
+### Frontend Configuration for Different Domains
+
+If your frontend and backend are deployed on different domains (e.g., frontend at `vitos.lianglab.net` and backend at `vitos-api.lianglab.net`), you can configure the backend API URL using the `BACKEND_API_URL` environment variable.
+
+**Option 1: Inline with start_frontend.sh**
+```bash
+BACKEND_API_URL="https://vitos-api.lianglab.net" ./start_frontend.sh
+```
+
+**Option 2: Inline with restart_frontend.sh**
+```bash
+BACKEND_API_URL="https://vitos-api.lianglab.net" ./restart_frontend.sh
+```
+
+**Option 3: Using export for multiple commands**
+```bash
+export BACKEND_API_URL="https://vitos-api.lianglab.net"
+./start_frontend.sh  # or ./restart_frontend.sh
+```
+
+**Note**:
+- Do not include the `/api/v1` suffix - it will be added automatically
+- If `BACKEND_API_URL` is not set, the frontend defaults to `http://localhost:8000`
+- The configuration is auto-generated into `frontend/config.js` at startup
+
 ## LiteLLM Proxy (Optional)
 
 LiteLLM is a unified API gateway that allows you to use multiple LLM providers through a single interface. It's particularly useful for:
