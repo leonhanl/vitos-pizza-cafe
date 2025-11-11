@@ -20,6 +20,7 @@ class Config:
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL") or OPENAI_DEFAULT_BASE_URL
     AMAP_API_KEY = os.getenv("AMAP_API_KEY")
+    AMAP_SSE_ENABLED = os.getenv("AMAP_SSE_ENABLED", "false").lower() == "true"
 
     # Embedding API Configuration
     # Note: OPENAI_EMBEDDING_BASE_URL defaults to OpenAI's endpoint, NOT to OPENAI_BASE_URL
@@ -57,14 +58,14 @@ class Config:
     # Format: {"server_name": {"url": "https://...", "transport": "sse", ...}}
     # Example:
     # MCP_SERVERS = {
-    #     "amap-amap-sse": {
+    #     "amap-sse": {
     #         "url": "https://mcp.amap.com/sse?key=YOUR_API_KEY",
     #         "transport": "sse"
     #     }
     # }
     MCP_SERVERS = {}
-    if AMAP_API_KEY:
-        MCP_SERVERS["amap-amap-sse"] = {
+    if AMAP_SSE_ENABLED and AMAP_API_KEY:
+        MCP_SERVERS["amap-sse"] = {
             "url": f"https://mcp.amap.com/sse?key={AMAP_API_KEY}",
             "transport": "sse"
         }

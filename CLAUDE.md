@@ -214,7 +214,8 @@ LLM_MODEL="deepseek.v3-v1:0"
 - `X_PAN_OUTPUT_CHECK_PROFILE_NAME`: AIRS profile for output validation (default: `'Demo-Profile-for-Output'`)
 
 ### Optional Services
-- `AMAP_API_KEY`: For AMAP MCP tools integration (location services)
+- `AMAP_SSE_ENABLED`: Set to `true` to enable AMAP-SSE MCP tools integration (default: `false`)
+- `AMAP_API_KEY`: API key for AMAP location services (required when `AMAP_SSE_ENABLED=true`)
 - `LANGSMITH_API_KEY`: For LangSmith tracing and debugging
 - `LANGSMITH_TRACING`: Set to `true` to enable tracing, `false` to disable
 - `LANGSMITH_ENDPOINT`: LangSmith API endpoint (default: `https://api.smith.langchain.com`)
@@ -298,7 +299,7 @@ python tests/test_litellm_health.py   # LiteLLM proxy health tests
 - Frontend runs on http://localhost:5500 by default (configurable in `start_frontend.sh`)
 - Frontend communicates with backend via HTTP API (backend URL configurable via `BACKEND_API_URL` env var)
 - Frontend configuration is auto-generated at startup into `frontend/config.js` (gitignored)
-- MCP tools (like AMAP) are automatically loaded if API keys are configured
+- MCP tools (like AMAP-SSE) are loaded only when explicitly enabled (e.g., `AMAP_SSE_ENABLED=true`) and API keys are configured
 - LiteLLM proxy server can be used as an alternative LLM backend (see `litellm/` directory and `.env.example`)
 
 ### Process Management
