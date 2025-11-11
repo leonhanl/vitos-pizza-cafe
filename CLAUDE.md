@@ -214,12 +214,19 @@ LLM_MODEL="deepseek.v3-v1:0"
 - `X_PAN_OUTPUT_CHECK_PROFILE_NAME`: AIRS profile for output validation (default: `'Demo-Profile-for-Output'`)
 
 ### Optional Services
-- `AMAP_SSE_ENABLED`: Set to `true` to enable AMAP-SSE MCP tools integration (default: `false`)
-- `AMAP_API_KEY`: API key for AMAP location services (required when `AMAP_SSE_ENABLED=true`)
+
+**AMAP MCP Tools** (two transport types supported):
+- `AMAP_API_KEY`: API key for AMAP services (shared by both transports)
+- `AMAP_SSE_ENABLED`: Set to `true` to enable AMAP-SSE (Server-Sent Events) transport (default: `false`)
+- `AMAP_STDIO_ENABLED`: Set to `true` to enable AMAP-STDIO (subprocess via uvx) transport (default: `false`)
+
+**LangSmith Tracing**:
 - `LANGSMITH_API_KEY`: For LangSmith tracing and debugging
 - `LANGSMITH_TRACING`: Set to `true` to enable tracing, `false` to disable
 - `LANGSMITH_ENDPOINT`: LangSmith API endpoint (default: `https://api.smith.langchain.com`)
 - `LANGSMITH_PROJECT`: Project name for organizing traces (default: `vitos-pizza-cafe`)
+
+**General**:
 - `LOG_LEVEL`: Logging verbosity (default: `INFO`)
 
 See `.env.example` for complete configuration examples.
@@ -299,7 +306,10 @@ python tests/test_litellm_health.py   # LiteLLM proxy health tests
 - Frontend runs on http://localhost:5500 by default (configurable in `start_frontend.sh`)
 - Frontend communicates with backend via HTTP API (backend URL configurable via `BACKEND_API_URL` env var)
 - Frontend configuration is auto-generated at startup into `frontend/config.js` (gitignored)
-- MCP tools (like AMAP-SSE) are loaded only when explicitly enabled (e.g., `AMAP_SSE_ENABLED=true`) and API keys are configured
+- MCP tools support multiple transport types:
+  - AMAP-SSE: HTTP-based streaming (requires `AMAP_SSE_ENABLED=true` and `AMAP_API_KEY`)
+  - AMAP-STDIO: Local subprocess via uvx (requires `AMAP_STDIO_ENABLED=true`, `AMAP_API_KEY`, and uvx installed)
+  - Both transports share the same API key and can be enabled simultaneously to demonstrate different MCP transport methods
 - LiteLLM proxy server can be used as an alternative LLM backend (see `litellm/` directory and `.env.example`)
 
 ### Process Management
@@ -312,6 +322,10 @@ python tests/test_litellm_health.py   # LiteLLM proxy health tests
 - Server logs are stored in the `logs/` directory with timestamp-based filenames
 - Log format: `backend-YYYY-MM-DD_HH-MM-SS.log` and `frontend-YYYY-MM-DD_HH-MM-SS.log`
 - Log level can be configured via `LOG_LEVEL` environment variable (default: INFO)
+- **Tool call logging**: All tool invocations (MCP and database tools) are automatically logged at INFO level with full request/response details, including:
+  - Tool name and input parameters when execution starts
+  - Complete output response when execution completes
+  - Error details if tool execution fails
 - Enable LangSmith tracing for detailed conversation flow debugging
 
 ### Project Directories

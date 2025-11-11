@@ -19,8 +19,11 @@ class Config:
     # Required API Keys
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL") or OPENAI_DEFAULT_BASE_URL
+
+    # AMAP Configuration
     AMAP_API_KEY = os.getenv("AMAP_API_KEY")
     AMAP_SSE_ENABLED = os.getenv("AMAP_SSE_ENABLED", "false").lower() == "true"
+    AMAP_STDIO_ENABLED = os.getenv("AMAP_STDIO_ENABLED", "false").lower() == "true"
 
     # Embedding API Configuration
     # Note: OPENAI_EMBEDDING_BASE_URL defaults to OpenAI's endpoint, NOT to OPENAI_BASE_URL
@@ -56,11 +59,19 @@ class Config:
 
     # MCP Configuration
     # Format: {"server_name": {"url": "https://...", "transport": "sse", ...}}
+    # Multiple transport types are supported: sse, stdio, streamable_http, websocket
+    # Both SSE and STDIO transports share the same AMAP_API_KEY for simplicity in this demo.
     # Example:
     # MCP_SERVERS = {
     #     "amap-sse": {
     #         "url": "https://mcp.amap.com/sse?key=YOUR_API_KEY",
     #         "transport": "sse"
+    #     },
+    #     "amap-stdio": {
+    #         "command": "uvx",
+    #         "args": ["amap-mcp-server"],
+    #         "transport": "stdio",
+    #         "env": {"AMAP_MAPS_API_KEY": "YOUR_API_KEY"}
     #     }
     # }
     MCP_SERVERS = {}
@@ -68,6 +79,13 @@ class Config:
         MCP_SERVERS["amap-sse"] = {
             "url": f"https://mcp.amap.com/sse?key={AMAP_API_KEY}",
             "transport": "sse"
+        }
+    if AMAP_STDIO_ENABLED and AMAP_API_KEY:
+        MCP_SERVERS["amap-stdio"] = {
+            "command": "uvx",
+            "args": ["amap-mcp-server"],
+            "transport": "stdio",
+            "env": {"AMAP_MAPS_API_KEY": AMAP_API_KEY}
         }
 
     @classmethod

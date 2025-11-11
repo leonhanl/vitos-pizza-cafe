@@ -11,6 +11,7 @@ from .knowledge_base import retrieve_context
 from .database import get_database_tools
 from .llm import get_llm
 from .mcp_tools import get_mcp_tools
+from .callbacks import ToolLoggingHandler
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +78,10 @@ class ChatService:
             messages.append(HumanMessage(content=user_input))
 
             # 8. Get response from React agent
-            result = await react_agent.ainvoke({"messages": messages})
+            result = await react_agent.ainvoke(
+                {"messages": messages},
+                config={"callbacks": [ToolLoggingHandler()]}
+            )
             response = result["messages"][-1].content
 
             # 9. Update conversation history
@@ -156,7 +160,10 @@ class ChatService:
             ]
 
             # 8. Get response from React agent
-            result = await react_agent.ainvoke({"messages": messages})
+            result = await react_agent.ainvoke(
+                {"messages": messages},
+                config={"callbacks": [ToolLoggingHandler()]}
+            )
             response = result["messages"][-1].content
 
             logger.debug(f"Generated stateless response: {response[:100]}...")
