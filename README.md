@@ -11,6 +11,11 @@ This application demonstrates common attack vectors in Gen AI applications, part
 
 - Python 3.12 or higher
 - pip package manager
+- **uv** (recommended): Fast Python package manager and tool runner
+  ```bash
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  ```
+  Note: `uvx` (included with uv) is required if you want to use AMAP-STDIO MCP transport
 - Docker and Docker Compose (optional, only needed for LiteLLM proxy)
 - API Keys:
   - **OpenAI API Key**: Required for text embedding in RAG system and LLM responses

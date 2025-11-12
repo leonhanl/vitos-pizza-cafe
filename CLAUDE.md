@@ -10,6 +10,10 @@ This is Vito's Pizza Cafe - an AI customer service application demonstrating AI 
 
 ### Setup and Installation
 ```bash
+# Install uv (recommended for faster package management and uvx tool runner)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# Note: uvx is included with uv and required for AMAP-STDIO MCP transport
+
 # Create and activate virtual environment
 python -m venv .venv
 source .venv/bin/activate  # On Unix/MacOS
