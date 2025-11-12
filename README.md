@@ -195,6 +195,112 @@ cd litellm
 docker-compose down -v
 ```
 
+## MCP Integration (Optional)
+
+The Model Context Protocol (MCP) extends the application with additional capabilities through standardized tool integrations. This project demonstrates two distinct MCP integration approaches.
+
+### Integration Approaches
+
+**Important:** Choose ONE approach - they are mutually exclusive:
+
+| Approach | Configuration | Use Case |
+|----------|--------------|----------|
+| **Direct Connection** | `.env` only | Simple setup, direct access to MCP servers |
+| **Proxy Mode** | `mcp-relay.yaml` + `.env` | Security scanning with AIRS, centralized gateway |
+
+### Direct MCP Connection (AMAP)
+
+Connect directly to AMAP (map and geocoding services) without a security proxy.
+
+**Supported transports:**
+- **AMAP-SSE** (Server-Sent Events): HTTP-based streaming
+- **AMAP-STDIO** (Standard I/O): Local subprocess via `uvx`
+
+**Configuration** (in `.env`):
+```bash
+AMAP_API_KEY=your_amap_api_key_here
+
+# Enable ONE transport type
+AMAP_SSE_ENABLED=true   # For SSE transport
+AMAP_STDIO_ENABLED=false
+
+# OR
+AMAP_SSE_ENABLED=false
+AMAP_STDIO_ENABLED=true  # For stdio transport (requires uvx)
+```
+
+**Note:** Disable when using PAN MCP Relay (set both to `false`).
+
+### PAN MCP Relay (Centralized Security Proxy)
+
+[PAN MCP Relay](https://github.com/PaloAltoNetworks/pan-mcp-relay) is a security-enhanced MCP relay server by Palo Alto Networks that acts as a centralized gateway for all MCP tools. It provides real-time AI threat protection by scanning tool interactions for:
+
+- Prompt injections and jailbreak attempts
+- Malicious URLs and toxic content
+- Sensitive data leakage (PII/PCI)
+- AI agentic threats and insecure outputs
+
+**Key Architecture:** The relay sits between your application and all upstream MCP servers, scanning tool descriptions, parameters, and responses through AIRS security profiles.
+
+```
+Vito's Backend → PAN MCP Relay (port 8800) → Upstream MCP Servers (AMAP, etc.)
+                      ↓ AIRS Security Checks
+```
+
+**Setup:**
+
+1. **Configure all MCP servers** in `pan-mcp-relay/mcp-relay.yaml`:
+   ```yaml
+   mcpRelay:
+     apiKey: <AIRS_API_KEY>
+     aiProfile: Demo-Profile-for-Input
+
+   mcpServers:
+     amap:
+       command: uvx
+       args:
+         - amap-mcp-server
+       env:
+         AMAP_MAPS_API_KEY: <API_KEY>
+   ```
+
+2. **Start the relay server**:
+   ```bash
+   cd pan-mcp-relay
+   ./start_pan_mcp_relay.sh
+   ```
+
+   The relay will listen on http://localhost:8800
+
+3. **Enable in application** (in `.env`):
+   ```bash
+   # Enable PAN MCP Relay
+   PAN_MCP_RELAY_ENABLED=true
+   PAN_MCP_RELAY_URL=http://127.0.0.1:8800/mcp/
+
+   # Disable direct MCP connections
+   AMAP_SSE_ENABLED=false
+   AMAP_STDIO_ENABLED=false
+   ```
+
+4. **Start your application**:
+   ```bash
+   ./start_backend.sh
+   ```
+
+**Requirements:**
+- Valid Palo Alto Networks AIRS API key
+- AI Security Profile configured in Strata Cloud Manager
+- `uv` package manager installed (`uvx` command available)
+
+**Important:** All MCP servers must be defined in `mcp-relay.yaml` - the relay acts as the single point of access for all tool integrations.
+
+To stop the relay:
+```bash
+cd pan-mcp-relay
+./stop_pan_mcp_relay.sh  # If stop script exists, otherwise kill the process
+```
+
 
 ## API Usage for Red Teaming
 

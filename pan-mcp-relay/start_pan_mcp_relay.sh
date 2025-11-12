@@ -1,0 +1,1 @@
+uvx pan-mcp-relay --config-file ./mcp-relay.yaml --transport=http -H 0.0.0.0 -p 8800 -d

@@ -1,0 +1,21 @@
+# PAN MCP Relay Configuration
+# This file configures the PAN MCP Relay server to connect MCP servers with AIRS protection
+
+# MCP Relay Settings
+mcpRelay:
+  # Palo Alto Networks AIRS API Key for security guardrails
+  apiKey: your-pan-airs-api-key
+
+  # AIRS AI Profile name for input/output safety checks
+  aiProfile: your-pan-profile-name-here
+
+# MCP Servers Configuration
+# Define MCP servers that will be proxied through the relay
+mcpServers:
+  # AMAP MCP Server
+  amap:
+    command: uvx
+    args:
+      - amap-mcp-server
+    env:
+      AMAP_MAPS_API_KEY: your-amap-api-key-here

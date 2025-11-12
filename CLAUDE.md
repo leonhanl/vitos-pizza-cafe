@@ -224,6 +224,19 @@ LLM_MODEL="deepseek.v3-v1:0"
 - `AMAP_SSE_ENABLED`: Set to `true` to enable AMAP-SSE (Server-Sent Events) transport (default: `false`)
 - `AMAP_STDIO_ENABLED`: Set to `true` to enable AMAP-STDIO (subprocess via uvx) transport (default: `false`)
 
+**PAN MCP Relay** (Centralized Security Proxy):
+- **Important:** When PAN MCP Relay is enabled, disable direct MCP connections (set `AMAP_SSE_ENABLED=false` and `AMAP_STDIO_ENABLED=false`)
+- The relay acts as a centralized proxy - **all MCP servers must be configured in `pan-mcp-relay/mcp-relay.yaml`**, not in backend `.env`
+- `PAN_MCP_RELAY_ENABLED`: Set to `true` to enable PAN MCP Relay (default: `false`)
+- `PAN_MCP_RELAY_URL`: Relay server URL (default: `http://127.0.0.1:8800/mcp/`)
+- Uses `streamable_http` transport type for HTTP-based MCP communication
+- Provides AIRS security scanning at three points: tool descriptions, parameters, and responses
+- Configuration files:
+  - Primary config: `pan-mcp-relay/mcp-relay.yaml` (defines AIRS settings and all upstream MCP servers)
+  - Startup script: `pan-mcp-relay/start_pan_mcp_relay.sh` (relay listens on port 8800)
+- Architecture flow: `Vito's Backend → PAN MCP Relay (port 8800) → Upstream MCP Servers (AMAP, etc.)`
+- GitHub: https://github.com/PaloAltoNetworks/pan-mcp-relay
+
 **LangSmith Tracing**:
 - `LANGSMITH_API_KEY`: For LangSmith tracing and debugging
 - `LANGSMITH_TRACING`: Set to `true` to enable tracing, `false` to disable
@@ -310,10 +323,18 @@ python tests/test_litellm_health.py   # LiteLLM proxy health tests
 - Frontend runs on http://localhost:5500 by default (configurable in `start_frontend.sh`)
 - Frontend communicates with backend via HTTP API (backend URL configurable via `BACKEND_API_URL` env var)
 - Frontend configuration is auto-generated at startup into `frontend/config.js` (gitignored)
-- MCP tools support multiple transport types:
-  - AMAP-SSE: HTTP-based streaming (requires `AMAP_SSE_ENABLED=true` and `AMAP_API_KEY`)
-  - AMAP-STDIO: Local subprocess via uvx (requires `AMAP_STDIO_ENABLED=true`, `AMAP_API_KEY`, and uvx installed)
-  - Both transports share the same API key and can be enabled simultaneously to demonstrate different MCP transport methods
+- MCP tools support multiple transport types (via langchain-mcp-adapters):
+  - **sse** (Server-Sent Events): HTTP-based one-way streaming
+    - Example: AMAP-SSE (requires `AMAP_SSE_ENABLED=true` and `AMAP_API_KEY`)
+  - **stdio** (Standard Input/Output): Local subprocess via command execution
+    - Example: AMAP-STDIO (requires `AMAP_STDIO_ENABLED=true`, `AMAP_API_KEY`, and uvx installed)
+  - **streamable_http**: Generic HTTP streaming for bidirectional communication
+    - Example: PAN MCP Relay (requires `PAN_MCP_RELAY_ENABLED=true` and `PAN_MCP_RELAY_URL`)
+  - **websocket**: WebSocket protocol (not yet configured in this project)
+  - **MCP Integration Modes** (mutually exclusive):
+    - **Direct Mode**: Enable AMAP-SSE or AMAP-STDIO for direct connection to MCP servers
+    - **Proxy Mode**: Enable PAN MCP Relay and disable direct connections - all MCP servers configured in `pan-mcp-relay/mcp-relay.yaml`
+    - Only ONE mode should be active at a time
 - LiteLLM proxy server can be used as an alternative LLM backend (see `litellm/` directory and `.env.example`)
 
 ### Process Management
@@ -331,6 +352,15 @@ python tests/test_litellm_health.py   # LiteLLM proxy health tests
   - Complete output response when execution completes
   - Error details if tool execution fails
 - Enable LangSmith tracing for detailed conversation flow debugging
+
+### MCP Tool Integration Details
+- **Tool name sanitization** (`backend/mcp_tools.py` lines 29-37): Workaround for pan-mcp-relay bug
+  - OpenAI API requires tool names matching pattern: `^[a-zA-Z0-9_-]{1,128}$`
+  - Bug: pan-mcp-relay may return tool names with colons (e.g., `"None:maps_geo"`)
+  - Workaround: Automatically replace colons with underscores (e.g., `"None:maps_geo"` → `"None_maps_geo"`)
+- **Transport detection**: Backend automatically detects enabled MCP transports and loads appropriate tools
+  - Direct transports (SSE/STDIO): Tools loaded directly from MCP server
+  - Proxy transport (streamable_http): Tools loaded from relay server, which proxies to upstream servers
 
 ### Project Directories
 - `logs/`: Timestamped server log files (created by start scripts)
