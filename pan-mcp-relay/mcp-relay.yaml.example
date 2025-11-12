@@ -14,8 +14,9 @@ mcpRelay:
 mcpServers:
   # AMAP MCP Server
   amap:
-    command: uvx
+    command: npx
     args:
-      - amap-mcp-server
+      - -y
+      - "@amap/amap-maps-mcp-server"
     env:
       AMAP_MAPS_API_KEY: your-amap-api-key-here

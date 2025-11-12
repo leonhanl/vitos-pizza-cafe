@@ -10,9 +10,9 @@ This is Vito's Pizza Cafe - an AI customer service application demonstrating AI 
 
 ### Setup and Installation
 ```bash
-# Install uv (recommended for faster package management and uvx tool runner)
+# Install uv (recommended for faster package management)
 curl -LsSf https://astral.sh/uv/install.sh | sh
-# Note: uvx is included with uv and required for AMAP-STDIO MCP transport
+# Note: For AMAP-STDIO MCP transport, Node.js and npm (with npx) are required
 
 # Create and activate virtual environment
 python -m venv .venv
@@ -222,7 +222,7 @@ LLM_MODEL="deepseek.v3-v1:0"
 **AMAP MCP Tools** (two transport types supported):
 - `AMAP_API_KEY`: API key for AMAP services (shared by both transports)
 - `AMAP_SSE_ENABLED`: Set to `true` to enable AMAP-SSE (Server-Sent Events) transport (default: `false`)
-- `AMAP_STDIO_ENABLED`: Set to `true` to enable AMAP-STDIO (subprocess via uvx) transport (default: `false`)
+- `AMAP_STDIO_ENABLED`: Set to `true` to enable AMAP-STDIO (subprocess via npx) transport (default: `false`)
 
 **PAN MCP Relay** (Centralized Security Proxy):
 - **Important:** When PAN MCP Relay is enabled, disable direct MCP connections (set `AMAP_SSE_ENABLED=false` and `AMAP_STDIO_ENABLED=false`)
@@ -327,7 +327,7 @@ python tests/test_litellm_health.py   # LiteLLM proxy health tests
   - **sse** (Server-Sent Events): HTTP-based one-way streaming
     - Example: AMAP-SSE (requires `AMAP_SSE_ENABLED=true` and `AMAP_API_KEY`)
   - **stdio** (Standard Input/Output): Local subprocess via command execution
-    - Example: AMAP-STDIO (requires `AMAP_STDIO_ENABLED=true`, `AMAP_API_KEY`, and uvx installed)
+    - Example: AMAP-STDIO (requires `AMAP_STDIO_ENABLED=true`, `AMAP_API_KEY`, and npx installed)
   - **streamable_http**: Generic HTTP streaming for bidirectional communication
     - Example: PAN MCP Relay (requires `PAN_MCP_RELAY_ENABLED=true` and `PAN_MCP_RELAY_URL`)
   - **websocket**: WebSocket protocol (not yet configured in this project)

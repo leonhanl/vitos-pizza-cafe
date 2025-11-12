@@ -15,7 +15,8 @@ This application demonstrates common attack vectors in Gen AI applications, part
   ```bash
   curl -LsSf https://astral.sh/uv/install.sh | sh
   ```
-  Note: `uvx` (included with uv) is required if you want to use AMAP-STDIO MCP transport
+- **Node.js and npm** (optional): Required if you want to use AMAP-STDIO MCP transport
+  - `npx` command (included with npm) is used to run the AMAP MCP server
 - Docker and Docker Compose (optional, only needed for LiteLLM proxy)
 - API Keys:
   - **OpenAI API Key**: Required for text embedding in RAG system and LLM responses
@@ -206,15 +207,19 @@ The Model Context Protocol (MCP) extends the application with additional capabil
 | Approach | Configuration | Use Case |
 |----------|--------------|----------|
 | **Direct Connection** | `.env` only | Simple setup, direct access to MCP servers |
-| **Proxy Mode** | `mcp-relay.yaml` + `.env` | Security scanning with AIRS, centralized gateway |
+| **Proxy Mode** | `mcp-relay.yaml` | Security scanning with AIRS, centralized gateway |
 
 ### Direct MCP Connection (AMAP)
 
-Connect directly to AMAP (map and geocoding services) without a security proxy.
+[AMAP (AutoNavi)](https://lbs.amap.com/api/mcp-server/gettingstarted) is a leading location-based services provider in China, offering map and geocoding capabilities through their MCP server integration.
+
+**Use Case**: This MCP tool enables the AI assistant to answer delivery-related questions like "Do you deliver to [location]?" by calculating the distance between the customer's location and Vito's Pizza Cafe. The tool provides geocoding, distance calculation, and route planning capabilities that help determine service availability based on delivery radius.
+
+**Integration**: Connect directly to AMAP services without a security proxy (for proxy-based security scanning, see PAN MCP Relay section below).
 
 **Supported transports:**
 - **AMAP-SSE** (Server-Sent Events): HTTP-based streaming
-- **AMAP-STDIO** (Standard I/O): Local subprocess via `uvx`
+- **AMAP-STDIO** (Standard I/O): Local subprocess via `npx`
 
 **Configuration** (in `.env`):
 ```bash
@@ -226,7 +231,7 @@ AMAP_STDIO_ENABLED=false
 
 # OR
 AMAP_SSE_ENABLED=false
-AMAP_STDIO_ENABLED=true  # For stdio transport (requires uvx)
+AMAP_STDIO_ENABLED=true  # For stdio transport (requires npx)
 ```
 
 **Note:** Disable when using PAN MCP Relay (set both to `false`).
@@ -257,9 +262,10 @@ Vito's Backend → PAN MCP Relay (port 8800) → Upstream MCP Servers (AMAP, etc
 
    mcpServers:
      amap:
-       command: uvx
+       command: npx
        args:
-         - amap-mcp-server
+         - -y
+         - "@amap/amap-maps-mcp-server"
        env:
          AMAP_MAPS_API_KEY: <API_KEY>
    ```
@@ -291,7 +297,7 @@ Vito's Backend → PAN MCP Relay (port 8800) → Upstream MCP Servers (AMAP, etc
 **Requirements:**
 - Valid Palo Alto Networks AIRS API key
 - AI Security Profile configured in Strata Cloud Manager
-- `uv` package manager installed (`uvx` command available)
+- Node.js and npm installed (`npx` command available)
 
 **Important:** All MCP servers must be defined in `mcp-relay.yaml` - the relay acts as the single point of access for all tool integrations.
 

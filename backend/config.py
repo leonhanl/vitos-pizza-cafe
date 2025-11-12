@@ -86,8 +86,8 @@ class Config:
         }
     if AMAP_STDIO_ENABLED and AMAP_API_KEY:
         MCP_SERVERS["amap-stdio"] = {
-            "command": "uvx",
-            "args": ["amap-mcp-server"],
+            "command": "npx",
+            "args": ["-y", "@amap/amap-maps-mcp-server"],
             "transport": "stdio",
             "env": {"AMAP_MAPS_API_KEY": AMAP_API_KEY}
         }
