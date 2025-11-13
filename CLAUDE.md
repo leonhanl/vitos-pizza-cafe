@@ -70,7 +70,7 @@ export BACKEND_API_URL="https://vitos-api.lianglab.net"
 ### Testing Security Features
 ```bash
 # Test AIRS (Palo Alto Networks AI Runtime Security) integration
-python tests/test_prisma_airs.py
+pytest tests/test_prisma_airs.py
 
 # The test file demonstrates input/output safety checks using AIRS API
 ```
@@ -309,7 +309,7 @@ pytest
 # Run specific test categories
 pytest tests/unit/                    # Unit tests only
 python tests/test_api_integration.py  # API integration tests
-python tests/test_prisma_airs.py      # AIRS security tests
+pytest tests/test_prisma_airs.py      # AIRS security tests
 python tests/test_litellm_health.py   # LiteLLM proxy health tests
 
 ```
