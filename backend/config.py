@@ -41,6 +41,15 @@ class Config:
     LANGSMITH_ENDPOINT = os.getenv("LANGSMITH_ENDPOINT", "https://api.smith.langchain.com")
     LANGSMITH_PROJECT = os.getenv("LANGSMITH_PROJECT", "vitos-pizza-cafe")
 
+    # AIRS (AI Runtime Security) Configuration
+    AIRS_ENABLED = os.getenv("AIRS_ENABLED", "false").lower() == "true"
+    X_PAN_TOKEN = os.getenv("X_PAN_TOKEN")
+    X_PAN_AI_MODEL = os.getenv("X_PAN_AI_MODEL", "gpt-5-mini")
+    X_PAN_APP_NAME = os.getenv("X_PAN_APP_NAME", "Vitos Pizza Cafe")
+    X_PAN_APP_USER = os.getenv("X_PAN_APP_USER", "Vitos-Admin")
+    X_PAN_INPUT_CHECK_PROFILE_NAME = os.getenv("X_PAN_INPUT_CHECK_PROFILE_NAME", "Demo-Profile-for-Input")
+    X_PAN_OUTPUT_CHECK_PROFILE_NAME = os.getenv("X_PAN_OUTPUT_CHECK_PROFILE_NAME", "Demo-Profile-for-Output")
+
     # Application Settings
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     KNOWLEDGE_BASE_PATH = os.getenv("KNOWLEDGE_BASE_PATH", "Vitos-Pizza-Cafe-KB")

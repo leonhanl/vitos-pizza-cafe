@@ -10,6 +10,7 @@ import uvicorn
 
 from .chat_service import get_or_create_chat_service, delete_conversation, list_conversations
 from .config import get_logger
+from .security.airs_scanner import scan_with_airs
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +93,7 @@ async def health_check():
 
 
 @app.post("/api/v1/chat", response_model=ChatResponse)
+@scan_with_airs
 async def chat(request: ChatRequest):
     """Main chat endpoint for processing user messages.
 

@@ -111,7 +111,12 @@ async function sendMessage() {
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-            throw new Error(errorData.detail || `Server error: ${response.status}`);
+            // Handle error detail - convert to string if it's an object
+            let errorDetail = errorData.detail;
+            if (typeof errorDetail === 'object' && errorDetail !== null) {
+                errorDetail = JSON.stringify(errorDetail, null, 2);
+            }
+            throw new Error(errorDetail || `Server error: ${response.status}`);
         }
 
         const data = await response.json();
@@ -129,7 +134,14 @@ async function sendMessage() {
         console.error('Chat error:', error);
         // Replace loading message with error
         loadingMessage.remove();
-        addMessage(`Sorry, I encountered an error: ${error.message}. Please try again.`, 'assistant');
+
+        // Handle error message - ensure it's always a string
+        let errorMsg = error.message || 'Unknown error occurred';
+        if (typeof errorMsg === 'object') {
+            errorMsg = JSON.stringify(errorMsg, null, 2);
+        }
+
+        addMessage(`Sorry, I encountered an error: ${errorMsg}. Please try again.`, 'assistant');
     } finally {
         chatInput.disabled = false;
         sendButton.disabled = false;
