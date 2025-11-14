@@ -23,6 +23,9 @@
     --welcome-bg: #1e3a5f;
     --welcome-border: #d73527;
     --accent-gold: #fbbf24;
+    --warning-color: #f59e0b;
+    --warning-hover: #d97706;
+    --warning-focus: rgba(245, 158, 11, 0.2);
 }
 
 /* Base Styles */
@@ -582,6 +585,89 @@ details[open] .suggested-header::before {
     transform: translateX(2px);
 }
 
+/* Hacking/Security Testing Section in Sidebar */
+.hacking-header {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.5rem 0;
+    border: none;
+    background: none;
+    list-style: none;
+    outline: none;
+    transition: color 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hacking-header:focus {
+    color: var(--warning-color);
+}
+
+.hacking-header:hover {
+    color: var(--warning-color);
+}
+
+.hacking-header::-webkit-details-marker {
+    display: none;
+}
+
+.hacking-header::before {
+    content: '▶';
+    display: inline-block;
+    margin-right: 0.5rem;
+    transition: transform 0.2s ease;
+    font-size: 0.75rem;
+}
+
+details[open] .hacking-header::before {
+    transform: rotate(90deg);
+}
+
+.hacking-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem 0;
+}
+
+.hacking-item {
+    padding: 0.75rem 1rem;
+    background: var(--background);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
+    position: relative;
+}
+
+.hacking-item::before {
+    content: '⚠️';
+    margin-right: 0.5rem;
+    display: none;
+}
+
+.hacking-item:hover::before {
+    display: inline;
+}
+
+.hacking-item:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--warning-focus);
+}
+
+.hacking-item:hover {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: var(--warning-color);
+    color: var(--warning-color);
+    transform: translateX(2px);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .main-content {
@@ -654,6 +740,11 @@ details[open] .suggested-header::before {
     }
 
     .suggested-item {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+    }
+
+    .hacking-item {
         padding: 0.5rem 0.75rem;
         font-size: 0.8rem;
     }

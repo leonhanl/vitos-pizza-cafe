@@ -77,6 +77,15 @@ function setupEventListeners() {
             sendMessage();
         });
     });
+
+    // Hacking/security testing questions
+    document.querySelectorAll('.hacking-item').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const question = e.target.getAttribute('data-question');
+            chatInput.value = question;
+            sendMessage();
+        });
+    });
 }
 
 // Chat Functions
