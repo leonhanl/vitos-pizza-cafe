@@ -27,7 +27,7 @@ class Config:
 
     # PAN MCP Relay Configuration
     PAN_MCP_RELAY_ENABLED = os.getenv("PAN_MCP_RELAY_ENABLED", "false").lower() == "true"
-    PAN_MCP_RELAY_URL = os.getenv("PAN_MCP_RELAY_URL", "http://127.0.0.1:8000/mcp/")
+    PAN_MCP_RELAY_URL = os.getenv("PAN_MCP_RELAY_URL", "http://127.0.0.1:8800/mcp/")
 
     # Embedding API Configuration
     # Note: OPENAI_EMBEDDING_BASE_URL defaults to OpenAI's endpoint, NOT to OPENAI_BASE_URL
