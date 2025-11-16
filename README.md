@@ -1,11 +1,10 @@
 # Vito's Pizza Cafe - AI Customer Service Application
 
-A comprehensive demonstration of a pizza cafe customer service application built with LangGraph and RAG (Retrieval-Augmented Generation). This project showcases various AI security vulnerabilities and their mitigation using Palo Alto Networks AI Runtime Security (AIRS) API.
+A pizza cafe customer service application demonstrating AI security vulnerabilities and their mitigation using Palo Alto Networks AI Runtime Security (AIRS). Built with LangGraph and RAG (Retrieval-Augmented Generation), this project serves as a practical example of implementing AI security best practices.
 
 ## Overview
 
-This application demonstrates common attack vectors in Gen AI applications, particularly in RAG-based systems, and how to protect against them using Palo Alto Networks AI Runtime Security API. It serves as a practical example of implementing AI security best practices in a real-world scenario.
-
+This application demonstrates common attack vectors in generative AI applications, particularly in RAG-based systems, and shows how to protect against them using Palo Alto Networks AI Runtime Security API.
 
 ## Prerequisites
 
@@ -17,13 +16,12 @@ This application demonstrates common attack vectors in Gen AI applications, part
   ```
 - **Node.js and npm** (optional): Required if you want to use AMAP-STDIO MCP transport
   - `npx` command (included with npm) is used to run the AMAP MCP server
-- Docker and Docker Compose (optional, only needed for LiteLLM proxy)
+- Docker and Docker Compose (needed for the LiteLLM proxy)
 - API Keys:
   - **OpenAI API Key**: Required for text embedding in RAG system and LLM responses
   - **Additional LLM Provider Options** (if not using OpenAI for LLM):
     - DeepSeek API Key
     - OpenRouter API Key
-    - AWS Bedrock credentials
     - Or use LiteLLM proxy for unified access to multiple providers
   - **Palo Alto Networks AIRS API Key**: Required for AI security features
 - Palo Alto Networks AI Runtime Security (AIRS) API Profiles for both input and output inspection
@@ -36,13 +34,19 @@ This application demonstrates common attack vectors in Gen AI applications, part
 
 ### Message Processing Flow
 
+The application uses a **LangGraph React agent pattern** where the LLM autonomously decides which tools to use:
+
 1. User submits a query through the Chatbot Web UI
 2. The Chatbot Web UI securely forwards the query to the application
-3. Relevant documents are retrieved from the vector store based on the query
-4. The application sends the query and contextual data to the LLM
-5. The LLM queries the external database for customer information
-6. A response is generated using both vector store and database information
+3. Relevant documents are retrieved from the vector store based on the query (always performed)
+4. The application creates a React agent with available tools (database, MCP) and sends the query with context
+5. The LLM analyzes the query and **conditionally** calls tools as needed:
+   - Database tools for customer information queries
+   - MCP tools (e.g., AMAP) for location-related queries
+6. A response is generated using retrieved context and tool results (if any)
 7. The response is sent to the user
+
+**Note:** Steps 5-6 vary per query - not all tools are invoked for every request.
 
 ### Core Components
 
@@ -50,10 +54,13 @@ The application consists of the following components:
 - RAG system for information retrieval
     - Chunking based on markdown tags
     - FAISS vector store
-    - Similarity search based on OpenAI embeddings (text-embedding-3-small)
+    - Similarity search based on OpenAI embeddings (`text-embedding-3-small`)
 - LangGraph React agent-based conversation flow
-- SQLite Database
+- SQLite database
 - Database integration using LangChain bind tools
+- MCP with LangChain
+- LiteLLM integration
+- MCP relay
 
 ## Installation Guide
 
@@ -89,9 +96,16 @@ cp .env.example .env
 1. Start the backend:
    ```bash
    ./start_backend.sh
+   # or
+   ./restart_backend.sh
    ```
 
    To verify the backend API:
+   ```bash
+   python tests/test_basic_api.py
+   ```
+
+   To run the full backend API test suite:
    ```bash
    python tests/test_api_integration.py
    ```
@@ -99,11 +113,13 @@ cp .env.example .env
 2. Launch the web interface:
    ```bash
    ./start_frontend.sh
+   # or
+   ./restart_frontend.sh
    ```
 
    Open a web browser and navigate to: http://localhost:5500
 
-3. Try some common questions:
+3. Test the application with common questions:
    ```
    What's on the menu?
    Do you deliver?
@@ -115,7 +131,7 @@ cp .env.example .env
    ./stop_frontend.sh
    ```
 
-**Note**: The start scripts run servers in the background. Logs are stored in the `logs/` directory with timestamps.
+**Note**: The start scripts run servers in the background. Logs are stored in the `logs/` directory.
 
 ### Frontend Configuration for Different Domains
 
@@ -144,7 +160,7 @@ export BACKEND_API_URL="https://vitos-api.lianglab.net"
 
 ## LiteLLM Proxy (Optional)
 
-LiteLLM is a unified API gateway that allows you to use multiple LLM providers through a single interface. It's particularly useful for:
+LiteLLM is a unified API gateway for accessing multiple LLM providers through a single interface. It's particularly useful for:
 
 - **Multi-provider support**: Switch between OpenAI, DeepSeek, Qwen, and other models without code changes
 - **Built-in guardrails**: Optional AIRS security scanning at the proxy level
@@ -159,7 +175,7 @@ LiteLLM is a unified API gateway that allows you to use multiple LLM providers t
    docker-compose up -d
    ```
 
-   Open a browser, and visit: http://localhost:4000/ui/
+   Open a browser and visit the web UI at: http://localhost:4000/ui/
 
 2. Configure your application to use the proxy by updating `.env`:
    ```bash
@@ -168,15 +184,13 @@ LiteLLM is a unified API gateway that allows you to use multiple LLM providers t
    LLM_MODEL=deepseek-chat  # or any model configured in litellm_config.yaml
    ```
 
-3. The proxy will be available at http://localhost:4000
-
-
 ### Supported Models
 
 The LiteLLM proxy comes pre-configured with:
-- **OpenAI**: gpt-5, gpt-5-mini, gpt-5-nano
-- **DeepSeek**: deepseek-chat, deepseek-reasoner
-- **Alibaba Qwen**: qwen-max, qwen-plus
+
+- **OpenAI**: `gpt-5`, `gpt-5-mini`, `gpt-5-nano`
+- **DeepSeek**: `deepseek-chat`, `deepseek-reasoner`
+- **Alibaba Qwen**: `qwen-max`, `qwen-plus`
 
 You can add more models by editing `litellm/litellm_config.yaml`.
 
@@ -221,7 +235,7 @@ The Model Context Protocol (MCP) extends the application with additional capabil
 - **AMAP-SSE** (Server-Sent Events): HTTP-based streaming
 - **AMAP-STDIO** (Standard I/O): Local subprocess via `npx`
 
-**Configuration** (in `.env`):
+**Configuration** in `.env`:
 ```bash
 AMAP_API_KEY=your_amap_api_key_here
 
@@ -234,7 +248,7 @@ AMAP_SSE_ENABLED=false
 AMAP_STDIO_ENABLED=true  # For stdio transport (requires npx)
 ```
 
-**Note:** Disable when using PAN MCP Relay (set both to `false`).
+**Important:** When using PAN MCP Relay, disable direct AMAP connections (set both to `false`).
 
 ### PAN MCP Relay (Centralized Security Proxy)
 
@@ -278,7 +292,7 @@ Vito's Backend → PAN MCP Relay (port 8800) → Upstream MCP Servers (AMAP, etc
 
    The relay will listen on http://localhost:8800
 
-3. **Enable in application** (in `.env`):
+3. **Enable in application** in `.env`:
    ```bash
    # Enable PAN MCP Relay
    PAN_MCP_RELAY_ENABLED=true
@@ -303,10 +317,9 @@ Vito's Backend → PAN MCP Relay (port 8800) → Upstream MCP Servers (AMAP, etc
 
 To stop the relay:
 ```bash
-cd pan-mcp-relay
-./stop_pan_mcp_relay.sh  # If stop script exists, otherwise kill the process
+# Find and stop the relay process
+pkill -f pan-mcp-relay
 ```
-
 
 ## API Usage for Red Teaming
 
@@ -322,10 +335,10 @@ curl -X POST http://localhost:8000/api/v1/chat \
   -d '{"message": "What pizzas do you have?", "stateless": true}'
 ```
 
-**Benefits:**
+**Benefits of stateless mode:**
 - No conversation history stored in memory
 - No conversation ID management needed
-- Ideal for running hundreds/thousands of test cases
+- Ideal for running hundreds or thousands of test cases
 - Zero memory footprint per request
 
 ### Stateful Mode (Default)
@@ -367,5 +380,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 For support, please open an issue in the GitHub repository or contact the maintainers.
-
-
