@@ -125,7 +125,9 @@ async function sendMessage() {
             if (typeof errorDetail === 'object' && errorDetail !== null) {
                 errorDetail = JSON.stringify(errorDetail, null, 2);
             }
-            throw new Error(errorDetail || `Server error: ${response.status}`);
+            const error = new Error(errorDetail || `Server error: ${response.status}`);
+            error.status = response.status; // Preserve status for content policy detection
+            throw error;
         }
 
         const data = await response.json();
@@ -150,7 +152,14 @@ async function sendMessage() {
             errorMsg = JSON.stringify(errorMsg, null, 2);
         }
 
-        addMessage(`Sorry, I encountered an error: ${errorMsg}. Please try again.`, 'assistant');
+        // Content policy errors (403) are already complete messages - display as-is
+        // Other errors need context wrapper
+        const isContentPolicyError = error.status === 403;
+        const displayMessage = isContentPolicyError
+            ? errorMsg
+            : `Sorry, I encountered an error: ${errorMsg}. Please try again.`;
+
+        addMessage(displayMessage, 'assistant');
     } finally {
         chatInput.disabled = false;
         sendButton.disabled = false;
