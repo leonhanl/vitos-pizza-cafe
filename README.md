@@ -30,7 +30,7 @@ This application demonstrates common attack vectors in generative AI application
 
 ### System Overview
     
-![Application Architecture](diagrams/vitos_architecture.png)
+![Application Architecture](diagrams/vitos_airs.png)
 
 ### Message Processing Flow
 
