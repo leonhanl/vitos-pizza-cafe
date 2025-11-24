@@ -175,7 +175,7 @@ def log_security_violation(
         f"action={action}, "
         f"profile={profile_name}, "
         f"conversation_id={conversation_id}, "
-        f"content_preview={content[:100]}..."  # Log first 100 chars for audit
+        f"content={content}"  # Log full content for audit
     )
 
 
