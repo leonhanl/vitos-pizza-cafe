@@ -45,7 +45,15 @@ def get_tool_description(tool_name: str, all_tools: list) -> str:
 
 
 class ChatService:
-    """Service for handling chat conversations with Vito's Pizza Cafe assistant."""
+    """Service for handling chat conversations with Vito's Pizza Cafe assistant.
+
+    Note: This class has 4 similar methods with intentional duplication for clarity:
+    - aprocess_query / aprocess_query_stream: Stateful (with conversation history)
+    - process_stateless_query / process_stateless_query_stream: Stateless (no history)
+
+    The duplication is intentional to keep each method self-contained and readable.
+    When modifying tool setup, remember to update all 4 methods consistently.
+    """
 
     def __init__(self, conversation_id: str = "default"):
         """Initialize chat service with conversation ID."""
