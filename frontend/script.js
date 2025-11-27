@@ -21,6 +21,7 @@ const REQUEST_TIMEOUT = 120000; // 120 seconds for MCP tool calls
 // Global state
 // Note: This will be set to a unique ID when createNewConversation() is called on page load
 let currentConversationId = null;
+let useStreamingMode = true;  // Default to streaming mode
 
 // Fetch with timeout helper
 async function fetchWithTimeout(url, options = {}, timeout = REQUEST_TIMEOUT) {
@@ -61,9 +62,29 @@ document.addEventListener('DOMContentLoaded', () => {
 // Event Listeners
 function setupEventListeners() {
     // Chat functionality
-    sendButton.addEventListener('click', sendMessage);
+    sendButton.addEventListener('click', () => {
+        if (useStreamingMode) {
+            sendMessageStream();
+        } else {
+            sendMessage();
+        }
+    });
     chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMessage();
+        if (e.key === 'Enter') {
+            if (useStreamingMode) {
+                sendMessageStream();
+            } else {
+                sendMessage();
+            }
+        }
+    });
+
+    // Streaming mode toggle
+    const streamingToggle = document.getElementById('streamingToggle');
+    streamingToggle.addEventListener('change', (e) => {
+        useStreamingMode = e.target.checked;
+        document.querySelector('.toggle-text').textContent =
+            useStreamingMode ? 'Streaming Mode' : 'Blocking Mode';
     });
 
     // New conversation functionality
@@ -74,7 +95,11 @@ function setupEventListeners() {
         button.addEventListener('click', (e) => {
             const question = e.target.getAttribute('data-question');
             chatInput.value = question;
-            sendMessage();
+            if (useStreamingMode) {
+                sendMessageStream();
+            } else {
+                sendMessage();
+            }
         });
     });
 
@@ -83,7 +108,11 @@ function setupEventListeners() {
         button.addEventListener('click', (e) => {
             const question = e.target.getAttribute('data-question');
             chatInput.value = question;
-            sendMessage();
+            if (useStreamingMode) {
+                sendMessageStream();
+            } else {
+                sendMessage();
+            }
         });
     });
 }
@@ -160,6 +189,123 @@ async function sendMessage() {
             : `Sorry, I encountered an error: ${errorMsg}. Please try again.`;
 
         addMessage(displayMessage, 'assistant');
+    } finally {
+        chatInput.disabled = false;
+        sendButton.disabled = false;
+        chatInput.focus();
+    }
+}
+
+async function sendMessageStream() {
+    const message = chatInput.value.trim();
+    if (!message) return;
+
+    // Disable input
+    chatInput.value = '';
+    chatInput.disabled = true;
+    sendButton.disabled = true;
+
+    // Add user message
+    addMessage(message, 'user');
+
+    // Create assistant message placeholder
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message assistant';
+    messageDiv.innerHTML = '<div class="message-content"></div>';
+    chatMessages.appendChild(messageDiv);
+    const contentDiv = messageDiv.querySelector('.message-content');
+
+    let accumulatedContent = "";
+    let toolCallsHtml = "";  // Accumulate tool call displays
+
+    try {
+        const response = await fetch(`${API_URL}/chat/stream`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                message: message,
+                conversation_id: currentConversationId
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const {done, value} = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, {stream: true});
+            const messages = buffer.split('\n\n');
+            buffer = messages.pop(); // Keep incomplete message in buffer
+
+            for (const msg of messages) {
+                if (msg.startsWith('data: ')) {
+                    const data = JSON.parse(msg.substring(6));
+
+                    if (data.type === 'start') {
+                        if (data.conversation_id) {
+                            currentConversationId = data.conversation_id;
+                        }
+                    }
+                    else if (data.type === 'kb_search') {
+                        // Knowledge base search - show progress indicator
+                        const message = data.message || 'Searching knowledge base...';
+                        toolCallsHtml += `
+                            <div class="tool-progress">
+                                <small>🔍 ${escapeHtml(message)}</small>
+                            </div>
+                        `;
+                        contentDiv.innerHTML = toolCallsHtml + marked.parse(accumulatedContent);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                    else if (data.type === 'token') {
+                        // Agent text response - accumulate and render
+                        accumulatedContent += data.content;
+                        const fullHtml = toolCallsHtml + marked.parse(accumulatedContent);
+                        contentDiv.innerHTML = fullHtml;
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                    else if (data.type === 'tool_call') {
+                        // Tool invocation - show simple tool name
+                        const toolName = data.tool || 'unknown';
+                        toolCallsHtml += `
+                            <div class="tool-progress">
+                                <small>🔧 Calling the tool: ${escapeHtml(toolName)} ...</small>
+                            </div>
+                        `;
+                        contentDiv.innerHTML = toolCallsHtml + marked.parse(accumulatedContent);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                    else if (data.type === 'tool_result') {
+                        // Tool result - show simple result
+                        const result = data.result || '';
+                        const truncatedResult = result.length > 200 ? result.substring(0, 200) + '...' : result;
+                        toolCallsHtml += `
+                            <div class="tool-progress">
+                                <small>✅ The tool call returns: ${escapeHtml(truncatedResult)}</small>
+                            </div>
+                        `;
+                        contentDiv.innerHTML = toolCallsHtml + marked.parse(accumulatedContent);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                    else if (data.type === 'done') {
+                        console.log('Streaming complete');
+                    }
+                    else if (data.type === 'error') {
+                        throw new Error(data.error);
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Streaming error:', error);
+        contentDiv.innerHTML = `<p>Sorry, I encountered an error: ${escapeHtml(error.message)}. Please try again.</p>`;
     } finally {
         chatInput.disabled = false;
         sendButton.disabled = false;

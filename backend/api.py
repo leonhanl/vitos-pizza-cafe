@@ -1,10 +1,12 @@
 """FastAPI application for Vito's Pizza Cafe backend."""
 
 import logging
+import json
 from typing import List, Dict, Any, Optional
 from uuid import uuid4
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 import uvicorn
 
@@ -144,6 +146,79 @@ async def chat(request: ChatRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error processing your message: {str(e)}"
         )
+
+
+@app.post("/api/v1/chat/stream")
+async def chat_stream(request: ChatRequest):
+    """Streaming chat endpoint with tool call visibility.
+
+    Supports two modes:
+    1. Stateful (default): Maintains conversation history across requests
+    2. Stateless: Processes each request independently without storing history
+
+    Returns:
+        StreamingResponse: Server-Sent Events (SSE) stream with event types:
+            - start: Initial event with conversation_id
+            - token: Text content chunks
+            - tool_call: Tool invocation with name and arguments
+            - tool_result: Tool execution results
+            - done: Stream completion
+            - error: Error messages
+    """
+    conversation_id = request.conversation_id or str(uuid4())
+
+    if request.stateless:
+        # Stateless mode - no conversation storage
+        from .chat_service import ChatService
+
+        async def event_stream():
+            try:
+                yield f"data: {json.dumps({'type': 'start', 'conversation_id': None})}\n\n"
+
+                async for event in ChatService.process_stateless_query_stream(request.message):
+                    yield f"data: {json.dumps(event)}\n\n"
+
+                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+            except Exception as e:
+                logger.error(f"Streaming error: {str(e)}")
+                yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+
+        return StreamingResponse(
+            event_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no"
+            }
+        )
+
+    # Stateful mode - with conversation storage
+    logger.info(f"Streaming chat request: conversation_id={conversation_id}, message_length={len(request.message)}")
+
+    chat_service = get_or_create_chat_service(conversation_id)
+
+    async def event_stream():
+        try:
+            yield f"data: {json.dumps({'type': 'start', 'conversation_id': conversation_id})}\n\n"
+
+            async for event in chat_service.aprocess_query_stream(request.message):
+                yield f"data: {json.dumps(event)}\n\n"
+
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+        except Exception as e:
+            logger.error(f"Streaming error: {str(e)}")
+            yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
 
 
 @app.get("/api/v1/conversations", response_model=List[str])

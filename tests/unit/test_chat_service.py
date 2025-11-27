@@ -1,7 +1,8 @@
 """Unit tests for chat service."""
 
+import pytest
 from unittest.mock import Mock, patch, AsyncMock
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 
 from backend.chat_service import ChatService, get_or_create_chat_service, delete_conversation
 
@@ -161,3 +162,159 @@ class TestChatServiceGlobalFunctions:
         """Test deleting non-existent conversation."""
         result = delete_conversation("nonexistent")
         assert result is False
+
+
+class TestChatServiceStreaming:
+    """Test cases for streaming functionality."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.conversation_id = "test_stream_conversation"
+        self.chat_service = ChatService(self.conversation_id)
+
+    @pytest.mark.asyncio
+    @patch('backend.chat_service.retrieve_context')
+    @patch('backend.chat_service.get_llm')
+    @patch('backend.chat_service.get_database_tools')
+    @patch('backend.chat_service.get_mcp_tools', new_callable=lambda: AsyncMock(return_value=[]))
+    @patch('backend.chat_service.create_react_agent')
+    async def test_aprocess_query_stream_basic(self, mock_create_agent, mock_get_mcp_tools,
+                                               mock_get_db_tools, mock_get_llm, mock_retrieve_context):
+        """Test basic streaming functionality."""
+        # Mock dependencies
+        mock_retrieve_context.return_value = "<context>Test context</context>"
+        mock_llm = Mock()
+        mock_get_llm.return_value = mock_llm
+        mock_db_tools = [Mock()]
+        mock_get_db_tools.return_value = mock_db_tools
+
+        # Mock React agent with streaming support
+        mock_agent = Mock()
+
+        # Simulate streaming chunks
+        async def mock_astream(*args, **kwargs):
+            # Simulate token chunks
+            yield ("namespace", "messages", (AIMessage(content="Hello"), {}))
+            yield ("namespace", "messages", (AIMessage(content=" World"), {}))
+
+        mock_agent.astream = mock_astream
+        mock_create_agent.return_value = mock_agent
+
+        # Collect streaming events
+        events = []
+        user_input = "Test query"
+        async for event in self.chat_service.aprocess_query_stream(user_input):
+            events.append(event)
+
+        # Assertions
+        assert len(events) >= 2  # At least 2 token events
+        assert all(e["type"] == "token" for e in events)
+        assert events[0]["content"] == "Hello"
+        assert events[1]["content"] == " World"
+
+        # Verify conversation history updated
+        assert len(self.chat_service.conversation_history) == 2
+        assert self.chat_service.conversation_history[0].content == user_input
+        assert self.chat_service.conversation_history[1].content == "Hello World"
+
+    @pytest.mark.asyncio
+    @patch('backend.chat_service.retrieve_context')
+    @patch('backend.chat_service.get_llm')
+    @patch('backend.chat_service.get_database_tools')
+    @patch('backend.chat_service.get_mcp_tools', new_callable=lambda: AsyncMock(return_value=[]))
+    @patch('backend.chat_service.create_react_agent')
+    async def test_aprocess_query_stream_with_tool_calls(self, mock_create_agent, mock_get_mcp_tools,
+                                                         mock_get_db_tools, mock_get_llm, mock_retrieve_context):
+        """Test streaming with tool calls."""
+        # Mock dependencies
+        mock_retrieve_context.return_value = "<context>Test context</context>"
+        mock_llm = Mock()
+        mock_get_llm.return_value = mock_llm
+        mock_db_tools = [Mock()]
+        mock_get_db_tools.return_value = mock_db_tools
+
+        # Mock React agent
+        mock_agent = Mock()
+
+        # Simulate streaming with tool calls
+        async def mock_astream(*args, **kwargs):
+            # Tool call
+            tool_call_msg = AIMessage(content="")
+            tool_call_msg.tool_calls = [{"name": "test_tool", "args": {"param": "value"}}]
+            yield ("namespace", "messages", (tool_call_msg, {}))
+
+            # Tool result
+            yield ("namespace", "messages", (ToolMessage(content="Tool result", tool_call_id="call_123"), {}))
+
+            # Final response
+            yield ("namespace", "messages", (AIMessage(content="Here is the result"), {}))
+
+        mock_agent.astream = mock_astream
+        mock_create_agent.return_value = mock_agent
+
+        # Collect streaming events
+        events = []
+        async for event in self.chat_service.aprocess_query_stream("Test query"):
+            events.append(event)
+
+        # Assertions
+        assert len(events) == 3
+        assert events[0]["type"] == "tool_call"
+        assert events[0]["tool"] == "test_tool"
+        assert events[0]["args"] == {"param": "value"}
+        assert events[1]["type"] == "tool_result"
+        assert events[1]["result"] == "Tool result"
+        assert events[2]["type"] == "token"
+        assert events[2]["content"] == "Here is the result"
+
+    @pytest.mark.asyncio
+    @patch('backend.chat_service.retrieve_context')
+    @patch('backend.chat_service.get_llm')
+    @patch('backend.chat_service.get_database_tools')
+    @patch('backend.chat_service.get_mcp_tools', new_callable=lambda: AsyncMock(return_value=[]))
+    @patch('backend.chat_service.create_react_agent')
+    async def test_process_stateless_query_stream(self, mock_create_agent, mock_get_mcp_tools,
+                                                  mock_get_db_tools, mock_get_llm, mock_retrieve_context):
+        """Test stateless streaming functionality."""
+        # Mock dependencies
+        mock_retrieve_context.return_value = "<context>Test context</context>"
+        mock_llm = Mock()
+        mock_get_llm.return_value = mock_llm
+        mock_db_tools = [Mock()]
+        mock_get_db_tools.return_value = mock_db_tools
+
+        # Mock React agent
+        mock_agent = Mock()
+
+        async def mock_astream(*args, **kwargs):
+            yield ("namespace", "messages", (AIMessage(content="Response"), {}))
+
+        mock_agent.astream = mock_astream
+        mock_create_agent.return_value = mock_agent
+
+        # Collect streaming events
+        events = []
+        async for event in ChatService.process_stateless_query_stream("Test query"):
+            events.append(event)
+
+        # Assertions
+        assert len(events) == 1
+        assert events[0]["type"] == "token"
+        assert events[0]["content"] == "Response"
+
+    @pytest.mark.asyncio
+    @patch('backend.chat_service.retrieve_context')
+    async def test_streaming_error_handling(self, mock_retrieve_context):
+        """Test error handling in streaming."""
+        # Mock exception
+        mock_retrieve_context.side_effect = Exception("Test error")
+
+        # Collect streaming events
+        events = []
+        async for event in self.chat_service.aprocess_query_stream("Test query"):
+            events.append(event)
+
+        # Should yield error event
+        assert len(events) == 1
+        assert events[0]["type"] == "error"
+        assert "Test error" in events[0]["error"]

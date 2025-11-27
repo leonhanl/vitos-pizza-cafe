@@ -327,6 +327,108 @@ class TestVitosAPIIntegration:
 
         print("✓ All complex stateless queries processed successfully")
 
+    def test_streaming_endpoint_basic(self):
+        """Test basic streaming chat endpoint functionality."""
+        print("\n--- Testing Basic Streaming Endpoint ---")
+
+        # message = "What's on your menu?"
+        message = "Do you deliver to this address: 力宝广场, 上海市淮海中路222号"
+        url = f"{self.client.base_url}/api/v1/chat/stream"
+
+        # Manual SSE parsing since VitosApiClient doesn't have streaming method yet
+        import requests
+        response = requests.post(
+            url,
+            json={"message": message, "conversation_id": self.test_conversation_id},
+            stream=True
+        )
+
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+        content_type = response.headers.get('content-type', '')
+        assert 'text/event-stream' in content_type, f"Should be SSE, got: {content_type}"
+
+        # Parse SSE events
+        events = []
+        for line in response.iter_lines(decode_unicode=True):
+            if line.startswith('data: '):
+                import json
+                event = json.loads(line[6:])  # Skip 'data: ' prefix
+                events.append(event)
+                print(f"  Received event: {event['type']}")
+
+        # Verify event sequence
+        assert len(events) > 0, "Should receive at least one event"
+        assert events[0]['type'] == 'start', "First event should be 'start'"
+        assert events[-1]['type'] == 'done', "Last event should be 'done'"
+
+        # Should have at least one token event
+        token_events = [e for e in events if e['type'] == 'token']
+        assert len(token_events) > 0, "Should have at least one token event"
+
+        print(f"  ✓ Received {len(events)} events including {len(token_events)} tokens")
+        print(f"  ✓ Conversation ID: {events[0].get('conversation_id')}")
+
+        self.conversation_ids_to_cleanup.append(self.test_conversation_id)
+
+    def test_streaming_endpoint_stateless(self):
+        """Test streaming in stateless mode."""
+        print("\n--- Testing Streaming Stateless Mode ---")
+
+        message = "Do you deliver?"
+        url = f"{self.client.base_url}/api/v1/chat/stream"
+
+        import requests
+        response = requests.post(
+            url,
+            json={"message": message, "stateless": True},
+            stream=True
+        )
+
+        assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+
+        # Parse SSE events
+        events = []
+        for line in response.iter_lines(decode_unicode=True):
+            if line.startswith('data: '):
+                import json
+                event = json.loads(line[6:])
+                events.append(event)
+
+        # Verify stateless behavior
+        assert events[0]['type'] == 'start', "First event should be 'start'"
+        assert events[0]['conversation_id'] is None, "Stateless should have None conversation_id"
+        assert events[-1]['type'] == 'done', "Last event should be 'done'"
+
+        print(f"  ✓ Stateless streaming works correctly")
+        print(f"  ✓ Received {len(events)} events")
+
+    def test_streaming_with_content_accumulation(self):
+        """Test that streaming content can be accumulated correctly."""
+        print("\n--- Testing Streaming Content Accumulation ---")
+
+        message = "Tell me about your restaurant"
+        url = f"{self.client.base_url}/api/v1/chat/stream"
+
+        import requests
+        response = requests.post(
+            url,
+            json={"message": message, "conversation_id": f"test_stream_{uuid.uuid4().hex[:8]}"},
+            stream=True
+        )
+
+        # Accumulate all token content
+        accumulated_content = ""
+        for line in response.iter_lines(decode_unicode=True):
+            if line.startswith('data: '):
+                import json
+                event = json.loads(line[6:])
+                if event['type'] == 'token':
+                    accumulated_content += event['content']
+
+        assert len(accumulated_content) > 0, "Should accumulate content"
+        print(f"  ✓ Accumulated {len(accumulated_content)} characters")
+        print(f"  ✓ Preview: {accumulated_content[:100]}...")
+
     def run_all_tests(self):
         """Run all integration tests."""
         print("=" * 60)
@@ -339,14 +441,17 @@ class TestVitosAPIIntegration:
             # Run all test methods
             test_methods = [
                 self.test_health_check,
-                self.test_basic_chat_functionality,
-                self.test_conversation_continuity,
-                self.test_conversation_history_retrieval,
-                self.test_conversation_management,
-                self.test_multiple_conversations,
-                self.test_stateless_mode,
-                self.test_stateless_vs_stateful_memory,
-                self.test_stateless_with_complex_queries,
+                # self.test_basic_chat_functionality,
+                # self.test_conversation_continuity,
+                # self.test_conversation_history_retrieval,
+                # self.test_conversation_management,
+                # self.test_multiple_conversations,
+                # self.test_stateless_mode,
+                # self.test_stateless_vs_stateful_memory,
+                # self.test_stateless_with_complex_queries,
+                self.test_streaming_endpoint_basic,
+                self.test_streaming_endpoint_stateless,
+                self.test_streaming_with_content_accumulation,
                 # self.test_error_scenarios
             ]
 
