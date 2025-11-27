@@ -21,7 +21,7 @@ const REQUEST_TIMEOUT = 120000; // 120 seconds for MCP tool calls
 // Global state
 // Note: This will be set to a unique ID when createNewConversation() is called on page load
 let currentConversationId = null;
-let useStreamingMode = true;  // Default to streaming mode
+let useStreamingMode = false;  // Default to blocking mode
 
 // Fetch with timeout helper
 async function fetchWithTimeout(url, options = {}, timeout = REQUEST_TIMEOUT) {
