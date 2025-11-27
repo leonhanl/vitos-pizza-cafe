@@ -232,7 +232,8 @@ class ChatService:
             self.conversation_history.append(HumanMessage(content=user_input))
             self.conversation_history.append(AIMessage(content=accumulated_response))
 
-            logger.debug(f"Streaming complete: {accumulated_response[:100]}...")
+            logger.debug(f"Streaming complete: {accumulated_response}")
+            logger.debug(f"Total chunks streamed: {chunk_count}")
 
         except Exception as e:
             logger.error(f"Error streaming query: {e}")
@@ -373,12 +374,14 @@ class ChatService:
 
             # 8. Stream response from React agent
             accumulated_response = ""
+            chunk_count = 0
 
             async for chunk in react_agent.astream(
                 {"messages": messages},
                 config={"callbacks": [ToolLoggingHandler()]},
                 stream_mode="messages"
             ):
+                chunk_count += 1
                 # Chunk format with stream_mode="messages": (message, metadata)
                 if len(chunk) == 2:
                     message, metadata = chunk
@@ -421,7 +424,8 @@ class ChatService:
                             "result": message.content
                         }
 
-            logger.debug(f"Stateless streaming complete: {accumulated_response[:100]}...")
+            logger.debug(f"Stateless streaming complete: {accumulated_response}")
+            logger.debug(f"Total chunks streamed: {chunk_count}")
 
         except Exception as e:
             logger.error(f"Error processing stateless streaming query: {e}")
