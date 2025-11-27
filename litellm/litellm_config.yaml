@@ -1,23 +1,15 @@
 model_list: 
-  - model_name: gpt-5-nano  # user-facing model alias
+  - model_name: gpt-4.1  # user-facing model alias
     litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
-      model: gpt-5-nano
+      model: gpt-4.1
       api_base: https://api.openai.com/v1
       api_key: "os.environ/OPENAI_API_KEY"
       stream: false
       # guardrails: ["panw-prisma-airs-input-guardrail", "panw-prisma-airs-output-guardrail"]
 
-  - model_name: gpt-5-mini  # user-facing model alias
+  - model_name: gpt-4.1-mini  # user-facing model alias
     litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
-      model: gpt-5-mini
-      api_base: https://api.openai.com/v1
-      api_key: "os.environ/OPENAI_API_KEY"
-      stream: false
-      guardrails: ["panw-prisma-airs-input-guardrail", "panw-prisma-airs-output-guardrail"]
-
-  - model_name: gpt-5  # user-facing model alias
-    litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
-      model: gpt-5
+      model: gpt-4.1-mini
       api_base: https://api.openai.com/v1
       api_key: "os.environ/OPENAI_API_KEY"
       stream: false
@@ -44,7 +36,7 @@ model_list:
       model: deepseek/deepseek-chat
       api_key: "os.environ/DEEPSEEK_API_KEY"
       stream: false
-      guardrails: ["panw-prisma-airs-input-guardrail", "panw-prisma-airs-output-guardrail"]
+      # guardrails: ["panw-prisma-airs-input-guardrail", "panw-prisma-airs-output-guardrail"]
 
   - model_name: deepseek-reasoner  # user-facing model alias
     litellm_params: # all params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
