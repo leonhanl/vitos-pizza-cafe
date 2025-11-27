@@ -39,8 +39,7 @@ services:
       BAILIAN_API_KEY: ${BAILIAN_API_KEY}
 
       AIRS_API_KEY: ${AIRS_API_KEY}
-      AIRS_API_INPUT_PROFILE_NAME: ${AIRS_API_INPUT_PROFILE_NAME}
-      AIRS_API_OUTPUT_PROFILE_NAME: ${AIRS_API_OUTPUT_PROFILE_NAME}
+      AIRS_API_PROFILE_NAME: ${AIRS_API_PROFILE_NAME}
     volumes:
       - ./litellm_config.yaml:/app/config.yaml
     networks:
