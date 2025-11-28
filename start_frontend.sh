@@ -57,5 +57,5 @@ sleep 1
 
 # Open browser (only on macOS)
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    open -a "Google Chrome" "http://localhost:${PORT}" 2>/dev/null || open "http://localhost:${PORT}"
+    open -a "Google Chrome" --args --incognito "http://localhost:${PORT}" 2>/dev/null || open "http://localhost:${PORT}"
 fi
