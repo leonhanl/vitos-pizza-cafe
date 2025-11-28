@@ -640,10 +640,88 @@ All security violations logged with:
 **Status**: Ready for Implementation
 
 **Key Decisions**:
-- ✅ Token-based scanning (every 50 tokens)
+- ✅ Chunk-based scanning (every 50 content chunks, not LLM tokens)
+- ✅ Synchronous blocking scans (simpler, acceptable latency)
+- ✅ Always perform final scan (no optimization)
+- ✅ Record user input only when content blocked (audit trail)
+- ✅ Scan LLM output only (not tool calls/results)
 - ✅ Fail-open behavior for availability
 - ✅ Apply to both stateful and stateless modes
 - ✅ Content retraction on detection (not just flagging)
+
+---
+
+## 17. Approved Design Decisions (Implementation Clarifications)
+
+During implementation planning, the following design decisions were made to resolve ambiguities in the original design:
+
+### Decision 1: Token Counting Mechanism
+**Decision**: Use LangGraph content chunks (not actual LLM tokens)
+
+**Rationale**:
+- LangGraph's `stream_mode="messages"` yields variable-size content chunks
+- No need for `tiktoken` tokenization overhead
+- For security purposes, chunk-based scanning is sufficient
+- Simpler implementation, no new dependencies
+
+**Implementation**: Use `AIRS_STREAM_SCAN_CHUNK_INTERVAL=50` (terminology change: "token" → "chunk")
+
+### Decision 2: Scanning Synchronicity
+**Decision**: Synchronous (blocking) scanning
+
+**Rationale**:
+- Correctness first - simpler implementation
+- AIRS API typically responds in 200-500ms - acceptable latency
+- Fail-open helps if AIRS API is slow
+- Can optimize to async later if profiling shows UX issues
+
+**Implementation**: `await scan_output(...)` blocks streaming briefly every 50 chunks
+
+### Decision 3: Conversation History Handling
+**Decision**: Record user input only when content is blocked
+
+**Rationale**:
+- Maintains audit trail of user inputs
+- Blocked responses are not persisted (no malicious content stored)
+- Clean state for next message
+- API consistency - history shows only allowed exchanges
+
+**Implementation**:
+```python
+if scan_result.action == "block":
+    # Record user input for audit
+    self.conversation_history.append(HumanMessage(content=user_input))
+    # Do NOT record blocked response
+    yield {"type": "security_violation", ...}
+    return
+```
+
+### Decision 4: Tool Content Scanning Scope
+**Decision**: Only scan LLM text output at two levels:
+- **Input scan**: At `api.py` endpoint level (before processing)
+- **Output scan**: At `chat_service.py` streaming methods (LLM `token` events only)
+
+**Out of scope for this implementation**:
+- Tool call arguments scanning
+- Tool result scanning
+- Knowledge base retrieval content scanning
+
+**Rationale**:
+- Primary threat is LLM-generated content (prompt injection, PII disclosure)
+- Tool results already constrained by database schema and MCP tool security
+- Performance trade-off - scanning all tool results increases AIRS API calls significantly
+- Can add tool scanning later if threat model requires it
+
+### Decision 5: Final Scan Strategy
+**Decision**: Always scan the final complete message (no optimization)
+
+**Rationale**:
+- Simplicity over cost optimization
+- Guarantees complete content is scanned
+- Eliminates edge case logic for "recently scanned" thresholds
+- Final scan ensures no malicious content in last chunks
+
+**Implementation**: Always perform final scan after streaming completes, regardless of when last progressive scan occurred
 
 ---
 
@@ -657,7 +735,7 @@ X_PAN_INPUT_CHECK_PROFILE_NAME=Demo-Profile-for-Input
 X_PAN_OUTPUT_CHECK_PROFILE_NAME=Demo-Profile-for-Output
 
 # AIRS Streaming Configuration
-AIRS_STREAM_SCAN_TOKEN_INTERVAL=50  # Scan every N tokens
+AIRS_STREAM_SCAN_CHUNK_INTERVAL=50  # Scan every N content chunks (LangGraph message chunks)
 ```
 
 ---
