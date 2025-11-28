@@ -229,7 +229,15 @@ async function sendMessageStream() {
         });
 
         if (!response.ok) {
-            throw new Error(`Server error: ${response.status}`);
+            // Extract error detail from response body
+            const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+            let errorDetail = errorData.detail;
+            if (typeof errorDetail === 'object' && errorDetail !== null) {
+                errorDetail = JSON.stringify(errorDetail, null, 2);
+            }
+            const error = new Error(errorDetail || `Server error: ${response.status}`);
+            error.status = response.status;
+            throw error;
         }
 
         const reader = response.body.getReader();
@@ -293,6 +301,25 @@ async function sendMessageStream() {
                         `;
                         contentDiv.innerHTML = toolCallsHtml + marked.parse(accumulatedContent);
                         chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                    else if (data.type === 'security_violation') {
+                        // Clear accumulated content
+                        accumulatedContent = "";
+                        toolCallsHtml = "";
+
+                        // Retract all displayed content and show error
+                        contentDiv.innerHTML = `
+                            <div class="security-error">
+                                <span class="error-icon">⚠️</span>
+                                <p><strong>Response Blocked</strong></p>
+                                <p>The response couldn't be displayed due to our content policy.</p>
+                                <p>Please try rephrasing your question.</p>
+                            </div>
+                        `;
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                        // Stop processing further events
+                        break;
                     }
                     else if (data.type === 'done') {
                         console.log('Streaming complete');

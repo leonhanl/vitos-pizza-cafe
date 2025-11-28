@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 import uvicorn
 
 from .chat_service import get_or_create_chat_service, delete_conversation, list_conversations
-from .config import get_logger
+from .config import get_logger, Config
 from .security.airs_scanner import scan_with_airs
 
 logger = logging.getLogger(__name__)
@@ -150,7 +150,7 @@ async def chat(request: ChatRequest):
 
 @app.post("/api/v1/chat/stream")
 async def chat_stream(request: ChatRequest):
-    """Streaming chat endpoint with tool call visibility.
+    """Streaming chat endpoint with tool call visibility and AIRS protection.
 
     Supports two modes:
     1. Stateful (default): Maintains conversation history across requests
@@ -164,7 +164,32 @@ async def chat_stream(request: ChatRequest):
             - tool_result: Tool execution results
             - done: Stream completion
             - error: Error messages
+            - security_violation: Content blocked by security policy
     """
+    # Input scan before streaming begins
+    if Config.AIRS_ENABLED:
+        from .security.airs_scanner import scan_input, log_security_violation
+
+        input_result = await scan_input(
+            prompt=request.message,
+            profile_name=Config.X_PAN_INPUT_CHECK_PROFILE_NAME
+        )
+
+        if input_result.action == "block":
+            log_security_violation(
+                scan_type="input",
+                category=input_result.category,
+                action="block",
+                profile_name=Config.X_PAN_INPUT_CHECK_PROFILE_NAME,
+                content=request.message,
+                conversation_id=getattr(request, 'conversation_id', None)
+            )
+
+            raise HTTPException(
+                status_code=403,
+                detail="Your request couldn't be processed due to our content policy."
+            )
+
     conversation_id = request.conversation_id or str(uuid4())
 
     if request.stateless:

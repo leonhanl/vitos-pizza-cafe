@@ -369,6 +369,151 @@ with VitosApiClient(base_url="http://localhost:8000") as client:
 
 See `tests/test_api_integration.py` for comprehensive examples of both modes.
 
+## AI Runtime Security (AIRS) - Streaming Protection
+
+The application implements **progressive streaming AIRS protection** to detect and block malicious content in real-time during AI response generation. This provides immediate protection against prompt injections, PII disclosure, and other security threats without waiting for the complete response.
+
+### Architecture
+
+**Two-Layer Security Scanning:**
+
+1. **Input Scanning** (at API endpoint level - `backend/api.py`)
+   - Scans user prompts before processing begins
+   - Blocks malicious requests immediately (HTTP 403)
+   - Returns sanitized error message to users
+
+2. **Output Scanning** (at chat service level - `backend/chat_service.py`)
+   - **Progressive scanning**: Scans accumulated content every 50 chunks during streaming
+   - **Final scanning**: Always scans complete response after streaming completes
+   - **Content retraction**: Immediately stops streaming and clears displayed content when violation detected
+
+### Key Features
+
+**Progressive Content Scanning:**
+- Scans accumulated response every 50 content chunks (configurable via `AIRS_STREAM_SCAN_CHUNK_INTERVAL`)
+- Detects malicious content within ~50 chunks of its appearance
+- Synchronous scanning (blocks briefly during scan, typically 200-500ms)
+
+**Content Retraction UX:**
+- Frontend immediately clears all displayed content when `security_violation` event received
+- Shows user-friendly error message without exposing security details
+- Prevents users from seeing any malicious content
+
+**Fail-Open Behavior:**
+- Streaming continues if AIRS API fails (prioritizes availability)
+- All failures logged for monitoring and audit
+
+**Conversation History:**
+- User input recorded for audit when content blocked
+- Blocked responses NOT stored in conversation history
+- Clean state maintained for next message
+
+### Configuration
+
+Add to `.env`:
+
+```bash
+# Enable AIRS scanning
+AIRS_ENABLED=true
+
+# AIRS API credentials and profiles
+X_PAN_TOKEN=your_xpan_token_here
+X_PAN_INPUT_CHECK_PROFILE_NAME='Demo-Profile-for-Input'
+X_PAN_OUTPUT_CHECK_PROFILE_NAME='Demo-Profile-for-Output'
+
+# Progressive scanning interval (scan every N content chunks)
+AIRS_STREAM_SCAN_CHUNK_INTERVAL=50
+```
+
+### Streaming Modes
+
+Both stateful and stateless streaming modes support progressive AIRS protection:
+
+**Stateful Mode** (with conversation history):
+```bash
+curl -N -X POST http://localhost:8000/api/v1/chat/stream \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "What pizzas do you have?",
+    "conversation_id": "test-123"
+  }'
+```
+
+**Stateless Mode** (no conversation history):
+```bash
+curl -N -X POST http://localhost:8000/api/v1/chat/stream \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "What pizzas do you have?",
+    "stateless": true
+  }'
+```
+
+### Event Types
+
+The streaming endpoint yields Server-Sent Events (SSE):
+
+- `start`: Streaming begins
+- `kb_search`: Knowledge base search in progress
+- `tool_call`: Tool invocation (database, MCP)
+- `tool_result`: Tool execution result
+- `token`: LLM text generation chunk
+- `security_violation`: Malicious content detected, streaming stopped
+- `error`: Error occurred during processing
+
+### Performance Impact
+
+**AIRS API Call Count** (for 500-chunk response):
+- 1 input scan (at API level)
+- 10 progressive output scans (at chunks 50, 100, ..., 500)
+- 1 final output scan (after streaming completes)
+- **Total: 12 AIRS API calls**
+
+**Typical Latency:**
+- Each scan: 200-500ms
+- Brief pause every 50 chunks during progressive scan
+- User-perceived impact: minimal for benign content
+
+### Testing
+
+**Unit Tests** (`tests/unit/test_streaming_airs.py`):
+```bash
+pytest tests/unit/test_streaming_airs.py -v
+```
+
+Tests cover:
+- Input scanning blocking malicious prompts
+- Progressive scanning detecting content at chunk intervals
+- Final scanning catching remaining malicious chunks
+- Security violation event format
+- Fail-open behavior on AIRS API errors
+- Conversation history handling for blocked content
+
+**Integration Tests** (`tests/test_streaming_airs_integration.py`):
+```bash
+pytest tests/test_streaming_airs_integration.py -v
+```
+
+Tests cover:
+- End-to-end streaming with malicious content detection
+- AIRS API call count verification
+- Performance impact measurement
+- Stateful vs stateless mode parity
+
+### Implementation Details
+
+**Files Modified:**
+- `backend/config.py`: Added `AIRS_STREAM_SCAN_CHUNK_INTERVAL` configuration
+- `backend/security/airs_scanner.py`: Enhanced logging with streaming context
+- `backend/api.py`: Added input scanning to `/api/v1/chat/stream` endpoint
+- `backend/chat_service.py`: Implemented progressive and final scanning in both streaming methods
+- `frontend/script.js`: Added `security_violation` event handler with content retraction
+- `frontend/style.css`: Added security error styling
+- `.env.example`: Documented streaming configuration
+
+**Design Document:**
+See `design/STREAMING_AIRS_PROTECTION.md` for comprehensive architecture, design decisions, and implementation rationale.
+
 ## Contributing
 
 Contributions are welcome through the standard GitHub fork and pull request workflow.

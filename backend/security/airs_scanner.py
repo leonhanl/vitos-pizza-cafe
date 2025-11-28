@@ -151,7 +151,9 @@ def log_security_violation(
     action: str,
     profile_name: str,
     content: str,
-    conversation_id: Optional[str] = None
+    conversation_id: Optional[str] = None,
+    scan_context: Optional[str] = None,
+    chunks_accumulated: Optional[int] = None
 ) -> None:
     """
     Log detailed security violation information for monitoring and audit.
@@ -167,16 +169,29 @@ def log_security_violation(
         profile_name: AIRS profile name used for scanning
         content: The actual content that was blocked (prompt or response)
         conversation_id: Optional conversation identifier for tracking
+        scan_context: Optional context for streaming scans ("progressive" or "final")
+        chunks_accumulated: Optional count of chunks accumulated when scan was performed
     """
-    logger.warning(
-        f"AIRS Security Violation - "
+    log_parts = [
+        f"AIRS Security Violation - ",
         f"scan_type={scan_type}, "
-        f"category={category}, "
-        f"action={action}, "
-        f"profile={profile_name}, "
-        f"conversation_id={conversation_id}, "
-        f"content={content}"  # Log full content for audit
-    )
+    ]
+
+    if scan_context:
+        log_parts.append(f"scan_context={scan_context}, ")
+
+    if chunks_accumulated is not None:
+        log_parts.append(f"chunks_accumulated={chunks_accumulated}, ")
+
+    log_parts.extend([
+        f"category={category}, ",
+        f"action={action}, ",
+        f"profile={profile_name}, ",
+        f"conversation_id={conversation_id}, ",
+        f"content_length={len(content)}"
+    ])
+
+    logger.warning("".join(log_parts))
 
 
 def scan_with_airs(func: Callable) -> Callable:

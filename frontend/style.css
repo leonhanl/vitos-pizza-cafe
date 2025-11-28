@@ -827,6 +827,31 @@ details[open] .hacking-header::before {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* Security Error Styling */
+.security-error {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 8px 0;
+    text-align: center;
+}
+
+.security-error .error-icon {
+    font-size: 32px;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.security-error p {
+    margin: 4px 0;
+    color: #856404;
+}
+
+.security-error strong {
+    color: #d39e00;
+}
+
 @media (max-width: 1024px) {
     .sidebar {
         width: 280px;

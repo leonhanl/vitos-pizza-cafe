@@ -179,6 +179,7 @@ class ChatService:
             # 8. Stream response from React agent
             accumulated_response = ""
             chunk_count = 0
+            content_chunk_count = 0  # Track content chunks separately
 
             async for chunk in react_agent.astream(
                 {"messages": messages},
@@ -215,10 +216,52 @@ class ChatService:
                             # Agent text response - yield token
                             content_chunk = message.content
                             accumulated_response += content_chunk
+                            content_chunk_count += 1
+
                             yield {
                                 "type": "token",
                                 "content": content_chunk
                             }
+
+                            # Progressive scanning every N chunks
+                            from .config import Config
+                            if content_chunk_count % Config.AIRS_STREAM_SCAN_CHUNK_INTERVAL == 0 and Config.AIRS_ENABLED:
+                                try:
+                                    from .security.airs_scanner import scan_output, log_security_violation
+
+                                    scan_result = await scan_output(
+                                        response=accumulated_response,
+                                        profile_name=Config.X_PAN_OUTPUT_CHECK_PROFILE_NAME
+                                    )
+
+                                    if scan_result.action == "block":
+                                        # Log violation
+                                        log_security_violation(
+                                            scan_type="output",
+                                            category=scan_result.category,
+                                            action="block",
+                                            profile_name=Config.X_PAN_OUTPUT_CHECK_PROFILE_NAME,
+                                            content=accumulated_response,
+                                            conversation_id=self.conversation_id,
+                                            scan_context="progressive",
+                                            chunks_accumulated=content_chunk_count
+                                        )
+
+                                        # Record user input for audit (per Decision 3)
+                                        self.conversation_history.append(HumanMessage(content=user_input))
+
+                                        # Yield security violation event
+                                        yield {
+                                            "type": "security_violation",
+                                            "message": "Response blocked due to content policy"
+                                        }
+
+                                        # Stop streaming immediately
+                                        return
+
+                                except Exception as e:
+                                    # Fail-open: log error and continue streaming
+                                    logger.error(f"AIRS scan failed during streaming: {e}")
 
                     # Handle ToolMessage (tool results)
                     elif isinstance(message, ToolMessage):
@@ -228,7 +271,42 @@ class ChatService:
                             "result": message.content
                         }
 
-            # 9. Update conversation history after streaming completes
+            # Final scan after streaming completes (per Decision 5)
+            from .config import Config
+            if Config.AIRS_ENABLED and accumulated_response:
+                try:
+                    from .security.airs_scanner import scan_output, log_security_violation
+
+                    final_scan_result = await scan_output(
+                        response=accumulated_response,
+                        profile_name=Config.X_PAN_OUTPUT_CHECK_PROFILE_NAME
+                    )
+
+                    if final_scan_result.action == "block":
+                        log_security_violation(
+                            scan_type="output",
+                            category=final_scan_result.category,
+                            action="block",
+                            profile_name=Config.X_PAN_OUTPUT_CHECK_PROFILE_NAME,
+                            content=accumulated_response,
+                            conversation_id=self.conversation_id,
+                            scan_context="final",
+                            chunks_accumulated=content_chunk_count
+                        )
+
+                        # Record user input for audit
+                        self.conversation_history.append(HumanMessage(content=user_input))
+
+                        yield {
+                            "type": "security_violation",
+                            "message": "Response blocked due to content policy"
+                        }
+                        return
+
+                except Exception as e:
+                    logger.error(f"AIRS final scan failed: {e}")
+
+            # 9. Update conversation history after streaming completes (only if not blocked)
             self.conversation_history.append(HumanMessage(content=user_input))
             self.conversation_history.append(AIMessage(content=accumulated_response))
 
@@ -375,6 +453,7 @@ class ChatService:
             # 8. Stream response from React agent
             accumulated_response = ""
             chunk_count = 0
+            content_chunk_count = 0  # Track content chunks separately
 
             async for chunk in react_agent.astream(
                 {"messages": messages},
@@ -411,10 +490,49 @@ class ChatService:
                             # Agent text response - yield token
                             content_chunk = message.content
                             accumulated_response += content_chunk
+                            content_chunk_count += 1
+
                             yield {
                                 "type": "token",
                                 "content": content_chunk
                             }
+
+                            # Progressive scanning every N chunks
+                            from .config import Config
+                            if content_chunk_count % Config.AIRS_STREAM_SCAN_CHUNK_INTERVAL == 0 and Config.AIRS_ENABLED:
+                                try:
+                                    from .security.airs_scanner import scan_output, log_security_violation
+
+                                    scan_result = await scan_output(
+                                        response=accumulated_response,
+                                        profile_name=Config.X_PAN_OUTPUT_CHECK_PROFILE_NAME
+                                    )
+
+                                    if scan_result.action == "block":
+                                        # Log violation (stateless mode has no conversation_id)
+                                        log_security_violation(
+                                            scan_type="output",
+                                            category=scan_result.category,
+                                            action="block",
+                                            profile_name=Config.X_PAN_OUTPUT_CHECK_PROFILE_NAME,
+                                            content=accumulated_response,
+                                            conversation_id=None,
+                                            scan_context="progressive",
+                                            chunks_accumulated=content_chunk_count
+                                        )
+
+                                        # Yield security violation event
+                                        yield {
+                                            "type": "security_violation",
+                                            "message": "Response blocked due to content policy"
+                                        }
+
+                                        # Stop streaming immediately
+                                        return
+
+                                except Exception as e:
+                                    # Fail-open: log error and continue streaming
+                                    logger.error(f"AIRS scan failed during streaming: {e}")
 
                     # Handle ToolMessage (tool results)
                     elif isinstance(message, ToolMessage):
@@ -423,6 +541,38 @@ class ChatService:
                             "tool_call_id": message.tool_call_id,
                             "result": message.content
                         }
+
+            # Final scan after streaming completes (per Decision 5)
+            from .config import Config
+            if Config.AIRS_ENABLED and accumulated_response:
+                try:
+                    from .security.airs_scanner import scan_output, log_security_violation
+
+                    final_scan_result = await scan_output(
+                        response=accumulated_response,
+                        profile_name=Config.X_PAN_OUTPUT_CHECK_PROFILE_NAME
+                    )
+
+                    if final_scan_result.action == "block":
+                        log_security_violation(
+                            scan_type="output",
+                            category=final_scan_result.category,
+                            action="block",
+                            profile_name=Config.X_PAN_OUTPUT_CHECK_PROFILE_NAME,
+                            content=accumulated_response,
+                            conversation_id=None,
+                            scan_context="final",
+                            chunks_accumulated=content_chunk_count
+                        )
+
+                        yield {
+                            "type": "security_violation",
+                            "message": "Response blocked due to content policy"
+                        }
+                        return
+
+                except Exception as e:
+                    logger.error(f"AIRS final scan failed: {e}")
 
             logger.debug(f"Stateless streaming complete: {accumulated_response}")
             logger.debug(f"Total chunks streamed: {chunk_count}")

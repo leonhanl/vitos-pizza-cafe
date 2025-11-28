@@ -50,6 +50,9 @@ class Config:
     X_PAN_INPUT_CHECK_PROFILE_NAME = os.getenv("X_PAN_INPUT_CHECK_PROFILE_NAME", "Demo-Profile-for-Input")
     X_PAN_OUTPUT_CHECK_PROFILE_NAME = os.getenv("X_PAN_OUTPUT_CHECK_PROFILE_NAME", "Demo-Profile-for-Output")
 
+    # AIRS Streaming Scan Configuration
+    AIRS_STREAM_SCAN_CHUNK_INTERVAL = int(os.getenv("AIRS_STREAM_SCAN_CHUNK_INTERVAL", "50"))
+
     # Application Settings
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
     KNOWLEDGE_BASE_PATH = os.getenv("KNOWLEDGE_BASE_PATH", "Vitos-Pizza-Cafe-KB")
