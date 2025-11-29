@@ -1,7 +1,8 @@
-# Implementing AIRS Protection for Streaming AI Applications
+# Implementing AIRS Output Protection for Streaming AI Applications
 
 **Date**: 2025-11-28
 **Version**: 1.0
+**Author**: Liang Han
 **Target**: Generic streaming agentic AI applications with frontend/backend architecture
 
 ---
@@ -11,6 +12,8 @@
 ### Problem Statement
 
 Modern Agentic AI applications display LLM responses token-by-token to provide a better user experience, rather than waiting for the complete generation before showing any output. The former approach is commonly called "streaming mode", while the latter is referred to as "non-streaming mode" or "blocking mode". *[See Appendix A for SSE protocol overview if unfamiliar with streaming architectures.]*
+
+**Document Scope**: This document focuses specifically on **response (output) protection** in streaming mode. While **request (input) scanning remains necessary and critical**, it is straightforward to implement in both streaming and non-streaming modes—simply scan the complete user input before processing. The challenge this document addresses is **progressive output scanning**, which requires specialized handling due to the incremental nature of streaming responses.
 
 Output security presents significant risks and is a critical concern in the AI security domain.
 
@@ -37,6 +40,8 @@ In **streaming mode**, the challenge is significantly more complex, requiring a 
 This document presents a **progressive output scanning** approach for streaming AI applications:
 
 **Progressive Output Scanning** - Validate LLM responses *during* streaming at regular intervals (e.g., every 50 chunks), with immediate content retraction at the frontend upon threat detection.
+
+**Important**: Request (input) scanning should always be performed before processing user input—this is straightforward in both streaming and non-streaming modes and is not covered in detail here. This document addresses the **unique challenges of output protection in streaming scenarios**.
 
 ### Key Benefits
 - **Mid-stream threat detection**: Catch PII disclosure, toxic content, and malicious URLs during streaming
