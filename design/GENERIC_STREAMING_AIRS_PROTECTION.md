@@ -10,7 +10,9 @@
 
 ### Problem Statement
 
-Modern streaming AI applications display LLM responses token-by-token to provide better user experience, rather than waiting for complete generation before showing any output. 
+Modern Agentic AI applications display LLM responses token-by-token to provide a better user experience, rather than waiting for the complete generation before showing any output. The former approach is commonly called "streaming mode", while the latter is referred to as "non-streaming mode" or "blocking mode". *[See Appendix A for SSE protocol overview if unfamiliar with streaming architectures.]*
+
+Output security presents significant risks and is a critical concern in the AI security domain.
 
 **Output Security Risks**: Agentic AI systems face critical risks in their output, including:
 - **Sensitive data leakage** (PII disclosure, confidential information)
@@ -20,15 +22,12 @@ Modern streaming AI applications display LLM responses token-by-token to provide
 **Non-Streaming vs Streaming Protection**:
 
 In **non-streaming (blocking)** mode, security validation is straightforward:
-- Wait for LLM to generate complete response
-- Scan entire output once
-- If malicious content detected, return error to client
-- User never sees the problematic content
+- Wait for the LLM to generate the complete response
+- Scan the entire output once
+- If malicious content is detected, return an error to the client
+- The user never sees the problematic content
 
-In **streaming mode**, the challenge is significantly more complex:
-- Content is displayed token-by-token *before* complete validation
-- Malicious content may be visible to users before detection
-- Must balance three competing requirements:
+In **streaming mode**, the challenge is significantly more complex, requiring a balance of three competing requirements:
   1. **Preserve user experience**: Maintain streaming output without disrupting UX
   2. **Minimize exposure**: Detect and retract problematic content as quickly as possible
   3. **Reasonable cost and complexity**: Practical implementation without excessive API calls or complexity
@@ -106,7 +105,7 @@ The following diagram shows the flow of data through security checkpoints:
 
 ```mermaid
 graph TD
-    Start([User Request]) --> StreamStart[Start LLM Streaming]
+    Start([Response Start]) --> StreamStart[Start LLM Streaming]
 
     StreamStart --> Accumulate[Accumulate Tokens<br/>chunk1, chunk2, ...]
 
@@ -410,39 +409,7 @@ sequenceDiagram
 
 This design is based on a production implementation available in the **Vito's Pizza Cafe** codebase.
 
-### Key Files to Reference
-
-**Backend**:
-- **`backend/security/airs_scanner.py`** - AIRS scanner module with fail-open behavior and logging
-- **`backend/chat_service.py`** (lines 200-299) - Progressive and final scanning in stream processing
-- **`backend/config.py`** - Configuration management (scan intervals, AIRS profiles)
-
-**Frontend**:
-- **`frontend/script.js`** (lines 280-341) - Content retraction and `security_violation` event handler
-- **`frontend/style.css`** - Security error styling
-
-**Tests**:
-- **`tests/unit/test_streaming_airs.py`** - Unit tests with mocked AIRS API
-- **`tests/test_streaming_airs_integration.py`** - End-to-end integration tests
-
-### Configuration
-
-**Environment Variables** (`.env`):
-```bash
-# AIRS Core Configuration
-AIRS_ENABLED=true
-AIRS_API_KEY=your_airs_api_token_here
-AIRS_OUTPUT_PROFILE_NAME=your-output-profile
-
-# Streaming Scan Configuration
-AIRS_STREAM_SCAN_INTERVAL=50  # Scan every N chunks
-
-# Failure Mode
-AIRS_FAIL_MODE=open  # 'open' (continue on error) or 'closed' (block on error)
-```
-
-### For Complete Implementation Details
-See the full codebase at: [Vito's Pizza Cafe Repository](https://github.com/yourusername/vitos-pizza-cafe)
+For Complete Implementation Details, see the full codebase at: [Vito's Pizza Cafe Repository](https://github.com/yourusername/vitos-pizza-cafe)
 
 The complete implementation includes:
 - Comprehensive error handling and logging
@@ -468,3 +435,95 @@ This design provides a **progressive output scanning** approach for streaming AI
 
 
 For detailed implementation guidance, reference the Vito's Pizza Cafe codebase.
+
+---
+
+## Appendix A: Server-Sent Events (SSE) Protocol Overview
+
+For readers unfamiliar with streaming architectures, this section provides a brief introduction to Server-Sent Events (SSE), the protocol commonly used for streaming AI responses.
+
+### What is SSE?
+
+**Server-Sent Events (SSE)** is a standard HTTP-based protocol that enables servers to push data to clients over a single, long-lived connection. Unlike traditional request-response patterns where the client receives one complete response, SSE allows the server to send multiple messages (events) over time through the same connection.
+
+In AI applications, SSE is ideal for streaming LLM responses token-by-token as they're generated, rather than waiting for the complete response before displaying anything to the user.
+
+### Traditional vs Streaming Communication
+
+| Aspect | Traditional (Blocking) | Streaming (SSE) |
+|--------|------------------------|-----------------|
+| **Connection** | Single request-response | Persistent connection |
+| **Data arrival** | All at once | Progressive chunks |
+| **User sees content** | After complete generation | During generation |
+| **Time to first byte** | 5-30 seconds (entire response) | <1 second (first token) |
+| **User experience** | Loading spinner, then full text | Text appears progressively |
+
+### SSE Data Flow
+
+The following diagram shows how data flows in a streaming architecture:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Backend
+    participant LLM
+
+    Client->>Backend: HTTP Request (POST /chat)
+    Note over Backend: Establish SSE connection
+    Backend->>LLM: Request completion
+
+    Note over Client,Backend: Persistent connection established
+
+    loop Token streaming
+        LLM-->>Backend: Generate token 1
+        Backend-->>Client: SSE event: token
+        Note over Client: Display "Hello"
+
+        LLM-->>Backend: Generate token 2
+        Backend-->>Client: SSE event: token
+        Note over Client: Display "Hello world"
+
+        LLM-->>Backend: Generate token 3
+        Backend-->>Client: SSE event: token
+        Note over Client: Display "Hello world!"
+    end
+
+    Backend-->>Client: SSE event: done
+    Note over Client,Backend: Connection closes
+```
+
+### SSE Message Format
+
+SSE messages follow a simple text-based format. Each event consists of one or more fields:
+
+```
+event: token
+data: {"type": "token", "content": "Hello"}
+
+event: token
+data: {"type": "token", "content": " world"}
+
+event: token
+data: {"type": "token", "content": "!"}
+
+event: done
+data: {"type": "done"}
+```
+
+**Key characteristics**:
+- Each event starts with `event:` (optional) and `data:` (required)
+- Events are separated by blank lines (`\n\n`)
+- Client processes each event immediately as it arrives
+- Connection stays open until server sends final event and closes
+
+### Why SSE Matters for Security
+
+The streaming nature of SSE creates unique security challenges:
+
+1. **Partial content visibility**: Users may see 50-100 tokens before a security scan completes
+2. **Progressive exposure**: Malicious content (PII, toxic language, phishing URLs) may appear mid-stream
+3. **Content retraction requirement**: If threats are detected mid-stream, already-displayed content must be retracted
+
+This is why the **progressive output scanning** approach described in this document is necessary - traditional "scan once at the end" strategies don't work when users can already see partial content.
+
+---
