@@ -1,3 +1,7 @@
+
+<img src="diagrams/logo.png" width="150" height="150">
+
+
 # Vito's Pizza Cafe - AI Customer Service Application
 
 A pizza cafe customer service application demonstrating AI security vulnerabilities and their mitigation using Palo Alto Networks AI Runtime Security (AIRS). Built with LangGraph and RAG (Retrieval-Augmented Generation), this project serves as a practical example of implementing AI security best practices.
