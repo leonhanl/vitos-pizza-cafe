@@ -17,7 +17,7 @@
 - Ham
 - Fresh Basil
 
-## Pricing (Example Prices)
+## Pricing
 - Small Pizza: $9.99
 - Medium Pizza: $12.99
 - Large Pizza: $15.99
