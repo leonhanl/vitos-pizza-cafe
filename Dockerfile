@@ -5,14 +5,17 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Optional: Use Tsinghua University mirror for faster downloads in China
+RUN sed -i 's/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list.d/debian.sources && \
+    sed -i 's/security.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list.d/debian.sources \
+    && apt-get update && apt-get install -y \
     curl \
     git \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv package manager (recommended fast Python package manager)
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.cargo/bin:$PATH"
+# Using pip with Tsinghua University mirror for faster downloads
+RUN pip install uv -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # Copy project files
 COPY pyproject.toml ./
@@ -38,7 +41,7 @@ RUN python -m venv .venv
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Activate virtual environment and install project dependencies
-RUN . .venv/bin/activate && pip install -e .
+RUN . .venv/bin/activate && pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -e .
 
 # Create example .env file (users need to provide actual API keys at runtime)
 COPY .env.example .env.example
