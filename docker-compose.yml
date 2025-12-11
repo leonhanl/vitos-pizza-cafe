@@ -1,6 +1,6 @@
 services:
   vitos-app:
-    image: harbor.halfcoffee.com/modelscan/vitos-pizza-cafe:${IMAGE_TAG}
+    image: registry.example.com/project/vitos-pizza-cafe:${IMAGE_TAG}
     ports:
       - "8000:8000"  # Backend API
       - "5500:5500"  # Frontend web interface
