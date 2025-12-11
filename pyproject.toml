@@ -38,7 +38,7 @@
         "pytest>=8.4.2",
         "pytest-asyncio>=0.23.0",
         "requests>=2.31.0",
-        "pan-aisecurity>=0.7.0",
+        "pan-aisecurity==0.7.0.5.post2",
 
     ]
 

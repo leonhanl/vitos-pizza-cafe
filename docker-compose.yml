@@ -1,13 +1,12 @@
-version: '3.8'
-
 services:
   vitos-app:
-    build: .
+    image: harbor.halfcoffee.com/modelscan/vitos-pizza-cafe:${IMAGE_TAG}
     ports:
       - "8000:8000"  # Backend API
       - "5500:5500"  # Frontend web interface
     environment:
       # These environment variables need to be set at runtime
+      - APP_VERSION=${APP_VERSION:-dev}
       - OPENAI_BASE_URL=${OPENAI_BASE_URL}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - LLM_MODEL=${LLM_MODEL:-gpt-4}
@@ -18,7 +17,6 @@ services:
       - X_PAN_INPUT_CHECK_PROFILE_NAME=${X_PAN_INPUT_CHECK_PROFILE_NAME:-Demo-Profile-for-Input}
       - X_PAN_OUTPUT_CHECK_PROFILE_NAME=${X_PAN_OUTPUT_CHECK_PROFILE_NAME:-Demo-Profile-for-Output}
       - AIRS_ENABLED=${AIRS_ENABLED:-true}
-
       # MCP configuration (optional)
       - AMAP_API_KEY=${AMAP_API_KEY}
       - AMAP_SSE_ENABLED=${AMAP_SSE_ENABLED:-false}

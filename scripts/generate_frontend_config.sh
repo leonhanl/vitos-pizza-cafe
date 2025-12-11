@@ -14,6 +14,7 @@ DEFAULT_BACKEND_API_URL="http://localhost:8000"
 
 # Use environment variable or default
 BACKEND_API_URL="${BACKEND_API_URL:-$DEFAULT_BACKEND_API_URL}"
+APP_VERSION="${APP_VERSION:-dev}"
 
 # Generate config.js file
 CONFIG_FILE="$FRONTEND_DIR/config.js"
@@ -24,7 +25,8 @@ cat > "$CONFIG_FILE" << EOF
 // Generated at: $(date)
 
 window.VITOS_CONFIG = {
-    BACKEND_API_URL: '${BACKEND_API_URL}'
+    BACKEND_API_URL: '${BACKEND_API_URL}',
+    APP_VERSION: '${APP_VERSION}'
 };
 EOF
 
