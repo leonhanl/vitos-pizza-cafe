@@ -9,6 +9,31 @@ from .config import Config
 logger = logging.getLogger(__name__)
 
 
+async def fix_tool_schema(tools: List) -> List:
+    """Fix schema issues for MCP tools that don't comply with OpenAI API requirements.
+
+    Specifically fixes:
+    - code-sandbox-mcp's sandbox_exec tool: Missing 'items' definition in array properties
+
+    Args:
+        tools: List of tools from MCP servers
+
+    Returns:
+        List of tools with fixed schemas
+    """
+    for tool in tools:
+        # Fix sandbox_exec tool schema
+        if tool.name == "sandbox_exec":
+            if "commands" in tool.args_schema.get("properties", {}):
+                commands_prop = tool.args_schema["properties"]["commands"]
+                if commands_prop.get("type") == "array" and "items" not in commands_prop:
+                    # Add missing items definition for array
+                    commands_prop["items"] = {"type": "string"}
+                    logger.info(f"Fixed schema for tool: {tool.name} (added items definition to commands array)")
+
+    return tools
+
+
 async def get_mcp_tools() -> List:
     """Get MCP tools from configured servers.
 
@@ -25,6 +50,9 @@ async def get_mcp_tools() -> List:
 
         # Get tools asynchronously
         tools = await client.get_tools()
+
+        # Fix tool schemas for OpenAI API compatibility
+        tools = await fix_tool_schema(tools)
 
         # Sanitize tool names to comply with OpenAI-compatible API requirements
         # Pattern requirement: ^[a-zA-Z0-9_-]{1,128}$

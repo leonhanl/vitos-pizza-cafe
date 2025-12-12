@@ -20,3 +20,9 @@ mcpServers:
       - "@amap/amap-maps-mcp-server"
     env:
       AMAP_MAPS_API_KEY: your-amap-api-key-here
+
+  # Python Code Execution MCP Server
+  code-sandbox:
+    command: /path/to/code-sandbox-mcp
+    args: []
+    env: {}

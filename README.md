@@ -254,6 +254,68 @@ AMAP_STDIO_ENABLED=true  # For stdio transport (requires npx)
 
 **Important:** When using PAN MCP Relay, disable direct AMAP connections (set both to `false`).
 
+### Python Code Execution (code-sandbox-mcp)
+
+[code-sandbox-mcp](https://github.com/Automata-Labs-team/code-sandbox-mcp) provides isolated Python code execution in Docker containers, enabling the AI assistant to perform calculations, data analysis, and code validation safely.
+
+**Use Cases**:
+- Complex mathematical calculations (e.g., "Calculate days between two dates")
+- Data analysis and transformations
+- Code snippet testing and validation
+- Generate and execute Python scripts dynamically
+
+**Integration**: Connect directly to code-sandbox-mcp via STDIO transport (for proxy-based security scanning, see PAN MCP Relay section below).
+
+**Requirements:**
+- Docker must be installed and running
+- code-sandbox-mcp binary installed on your system
+
+**Installation:**
+
+1. **Install the binary:**
+
+   Linux/MacOS:
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/Automata-Labs-team/code-sandbox-mcp/main/install.sh | bash
+   ```
+
+   Windows (PowerShell):
+   ```powershell
+   irm https://raw.githubusercontent.com/Automata-Labs-team/code-sandbox-mcp/main/install.ps1 | iex
+   ```
+
+   The binary will be installed to `~/.local/share/code-sandbox-mcp/code-sandbox-mcp` by default.
+
+2. **Pull the Docker image (required):**
+
+   ```bash
+   docker pull python:3.12-slim-bookworm
+   ```
+
+   This image is required for code execution and must be available before using the tool.
+
+**Configuration** in `.env`:
+```bash
+# Path to code-sandbox-mcp binary
+CODE_SANDBOX_MCP_PATH=/Users/yourusername/.local/share/code-sandbox-mcp/code-sandbox-mcp
+
+# Enable Python code execution
+PYTHON_EXEC_MCP_ENABLED=true
+```
+
+**Usage Example:**
+
+Once configured, ask the assistant computational questions:
+```
+User: Calculate the number of days between January 1, 2020 and March 18, 2025
+Assistant: [Uses sandbox_exec to run Python date calculation]
+
+User: Write and run a Python function to calculate the Fibonacci sequence
+Assistant: [Creates and executes code in isolated container]
+```
+
+**Important:** When using PAN MCP Relay, disable direct connection (set `PYTHON_EXEC_MCP_ENABLED=false`).
+
 ### PAN MCP Relay (Centralized Security Proxy)
 
 [PAN MCP Relay](https://github.com/PaloAltoNetworks/pan-mcp-relay) is a security-enhanced MCP relay server by Palo Alto Networks that acts as a centralized gateway for all MCP tools. It provides real-time AI threat protection by scanning tool interactions for:
@@ -286,6 +348,10 @@ Vito's Backend → PAN MCP Relay (port 8800) → Upstream MCP Servers (AMAP, etc
          - "@amap/amap-maps-mcp-server"
        env:
          AMAP_MAPS_API_KEY: <API_KEY>
+     code-sandbox:
+       command: /path/to/code-sandbox-mcp
+       args: []
+       env: {}
    ```
 
 2. **Start the relay server**:
@@ -305,6 +371,7 @@ Vito's Backend → PAN MCP Relay (port 8800) → Upstream MCP Servers (AMAP, etc
    # Disable direct MCP connections
    AMAP_SSE_ENABLED=false
    AMAP_STDIO_ENABLED=false
+   PYTHON_EXEC_MCP_ENABLED=false
    ```
 
 4. **Start your application**:

@@ -25,6 +25,10 @@ class Config:
     AMAP_SSE_ENABLED = os.getenv("AMAP_SSE_ENABLED", "false").lower() == "true"
     AMAP_STDIO_ENABLED = os.getenv("AMAP_STDIO_ENABLED", "false").lower() == "true"
 
+    # Python Code Execution Configuration (code-sandbox-mcp)
+    CODE_SANDBOX_MCP_PATH = os.getenv("CODE_SANDBOX_MCP_PATH")
+    PYTHON_EXEC_MCP_ENABLED = os.getenv("PYTHON_EXEC_MCP_ENABLED", "false").lower() == "true"
+
     # PAN MCP Relay Configuration
     PAN_MCP_RELAY_ENABLED = os.getenv("PAN_MCP_RELAY_ENABLED", "false").lower() == "true"
     PAN_MCP_RELAY_URL = os.getenv("PAN_MCP_RELAY_URL", "http://127.0.0.1:8800/mcp/")
@@ -102,6 +106,13 @@ class Config:
             "args": ["-y", "@amap/amap-maps-mcp-server"],
             "transport": "stdio",
             "env": {"AMAP_MAPS_API_KEY": AMAP_API_KEY}
+        }
+    if PYTHON_EXEC_MCP_ENABLED and CODE_SANDBOX_MCP_PATH:
+        MCP_SERVERS["code-sandbox-mcp"] = {
+            "command": CODE_SANDBOX_MCP_PATH,
+            "args": [],
+            "transport": "stdio",
+            "env": {}
         }
     if PAN_MCP_RELAY_ENABLED:
         MCP_SERVERS["pan-mcp-relay"] = {
