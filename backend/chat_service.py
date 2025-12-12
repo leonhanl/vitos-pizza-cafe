@@ -6,7 +6,7 @@ from typing import List, Optional, Dict, Any, AsyncIterator
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, ToolMessage
 from langgraph.prebuilt import create_react_agent
 
-from .config import logger
+from .config import Config, logger
 from .knowledge_base import retrieve_context
 from .database import get_database_tools
 from .llm import get_llm
@@ -14,9 +14,6 @@ from .mcp_tools import get_mcp_tools
 from .callbacks import ToolLoggingHandler
 
 logger = logging.getLogger(__name__)
-
-# System prompt for Vito's Pizza Cafe
-SYSTEM_PROMPT = """You are the intelligent assistant for Vito's Pizza Cafe, well-versed in the company background, account management, menus and orders, delivery and pickup, dining, and payment information. Please provide users with precise answers regarding registration, login, order inquiries, placing orders, discounts, and refund policies, always offering help in a friendly and professional tone and responding in the language used in the user's query. For questions beyond the above scope, please inform the user that you can only provide information related to the aforementioned services, and suggest that they contact the in-store staff or visit the official website for further assistance. Use the following content as the knowledge you have learned, enclosed within <context></context> XML tags. When you need to reference the content in the context, please use the original text without any arbitrary modifications, including URL addresses, etc. When calculating, please make sure to write python code and use code-sandbox-mcp tools to ensure accuracy, no matter how simple it is."""
 
 
 def get_tool_description(tool_name: str, all_tools: list) -> str:
@@ -100,7 +97,7 @@ class ChatService:
             messages = []
 
             # Add system prompt with context
-            system_message = f"{SYSTEM_PROMPT}\n\n{context}"
+            system_message = f"{Config.SYSTEM_PROMPT}\n\n{context}"
             messages.append(SystemMessage(content=system_message))
 
             # Add conversation history if provided
@@ -166,7 +163,7 @@ class ChatService:
             messages = []
 
             # Add system prompt with context
-            system_message = f"{SYSTEM_PROMPT}\n\n{context}"
+            system_message = f"{Config.SYSTEM_PROMPT}\n\n{context}"
             messages.append(SystemMessage(content=system_message))
 
             # Add conversation history if provided
@@ -224,7 +221,6 @@ class ChatService:
                             }
 
                             # Progressive scanning every N chunks
-                            from .config import Config
                             if content_chunk_count % Config.AIRS_STREAM_SCAN_CHUNK_INTERVAL == 0 and Config.AIRS_ENABLED:
                                 try:
                                     from .security.airs_scanner import scan_output, log_security_violation
@@ -272,7 +268,6 @@ class ChatService:
                         }
 
             # Final scan after streaming completes (per Decision 5)
-            from .config import Config
             if Config.AIRS_ENABLED and accumulated_response:
                 try:
                     from .security.airs_scanner import scan_output, log_security_violation
@@ -378,7 +373,7 @@ class ChatService:
             )
 
             # 7. Prepare messages (no conversation history)
-            system_message = f"{SYSTEM_PROMPT}\n\n{context}"
+            system_message = f"{Config.SYSTEM_PROMPT}\n\n{context}"
             messages = [
                 SystemMessage(content=system_message),
                 HumanMessage(content=user_input)
@@ -444,7 +439,7 @@ class ChatService:
             )
 
             # 7. Prepare messages (no conversation history)
-            system_message = f"{SYSTEM_PROMPT}\n\n{context}"
+            system_message = f"{Config.SYSTEM_PROMPT}\n\n{context}"
             messages = [
                 SystemMessage(content=system_message),
                 HumanMessage(content=user_input)
@@ -498,7 +493,6 @@ class ChatService:
                             }
 
                             # Progressive scanning every N chunks
-                            from .config import Config
                             if content_chunk_count % Config.AIRS_STREAM_SCAN_CHUNK_INTERVAL == 0 and Config.AIRS_ENABLED:
                                 try:
                                     from .security.airs_scanner import scan_output, log_security_violation
@@ -543,7 +537,6 @@ class ChatService:
                         }
 
             # Final scan after streaming completes (per Decision 5)
-            from .config import Config
             if Config.AIRS_ENABLED and accumulated_response:
                 try:
                     from .security.airs_scanner import scan_output, log_security_violation
