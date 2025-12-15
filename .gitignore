@@ -7,7 +7,7 @@ __pycache__/
 *.so
 
 # pipeline
-pipeline.groovy
+#pipeline.groovy
 
 # Distribution / packaging
 .Python
