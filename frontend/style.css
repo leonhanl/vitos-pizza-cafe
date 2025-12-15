@@ -671,6 +671,19 @@ details[open] .hacking-header::before {
     transform: translateX(2px);
 }
 
+/* App Version Display */
+.app-version {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    font-size: 12px;
+    color: #acacac;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 4px 8px;
+    border-radius: 4px;
+    z-index: 1000;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .main-content {

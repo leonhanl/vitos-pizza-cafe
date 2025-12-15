@@ -1,0 +1,62 @@
+services:
+  vitos-app:
+    image: registry.example.com/project/vitos-pizza-cafe:${IMAGE_TAG}
+    ports:
+      - "8000:8000"  # Backend API
+      - "5500:5500"  # Frontend web interface
+    environment:
+      # These environment variables need to be set at runtime
+      - APP_VERSION=${APP_VERSION:-dev}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4}
+      - OPENAI_EMBEDDING_BASE_URL=${OPENAI_EMBEDDING_BASE_URL}
+      - OPENAI_EMBEDDING_API_KEY=${OPENAI_EMBEDDING_API_KEY}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL}
+      - X_PAN_TOKEN=${X_PAN_TOKEN}
+      - X_PAN_INPUT_CHECK_PROFILE_NAME=${X_PAN_INPUT_CHECK_PROFILE_NAME:-Demo-Profile-for-Input}
+      - X_PAN_OUTPUT_CHECK_PROFILE_NAME=${X_PAN_OUTPUT_CHECK_PROFILE_NAME:-Demo-Profile-for-Output}
+      - AIRS_ENABLED=${AIRS_ENABLED:-true}
+      # MCP configuration (optional)
+      - AMAP_API_KEY=${AMAP_API_KEY}
+      - AMAP_SSE_ENABLED=${AMAP_SSE_ENABLED:-false}
+      - AMAP_STDIO_ENABLED=${AMAP_STDIO_ENABLED:-false}
+      - PAN_MCP_RELAY_ENABLED=${PAN_MCP_RELAY_ENABLED:-false}
+      - PAN_MCP_RELAY_URL=${PAN_MCP_RELAY_URL}
+      - BACKEND_API_URL=${BACKEND_API_URL}
+    volumes:
+      - ./logs:/app/logs  # Persistent logs
+      - ./.env:/app/.env:ro  # Mount environment configuration file
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # LiteLLM proxy service (optional)
+  litellm:
+    build: ./litellm
+    ports:
+      - "4000:4000"
+    environment:
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-your_master_key_here}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - QWEN_API_KEY=${QWEN_API_KEY}
+    volumes:
+      - ./litellm/litellm_config.yaml:/app/litellm_config.yaml
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    profiles:
+      - litellm
+
+networks:
+  default:
+    name: vitos-network

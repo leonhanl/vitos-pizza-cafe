@@ -57,6 +57,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupEventListeners();
     createNewConversation();
+    
+    // Display app version if available
+    displayAppVersion();
 });
 
 // Event Listeners
@@ -436,3 +439,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// Add this new function before the health check function
+function displayAppVersion() {
+    const versionElement = document.getElementById('appVersion');
+    if (versionElement && window.VITOS_CONFIG && window.VITOS_CONFIG.APP_VERSION) {
+        versionElement.textContent = `Version: ${window.VITOS_CONFIG.APP_VERSION}`;
+    }
+}
