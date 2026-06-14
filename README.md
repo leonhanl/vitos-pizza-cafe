@@ -64,7 +64,6 @@ The application consists of the following components:
 - Database integration using LangChain bind tools
 - MCP with LangChain
 - LiteLLM integration
-- MCP relay
 
 ## Installation Guide
 
@@ -216,16 +215,7 @@ docker-compose down -v
 
 ## MCP Integration (Optional)
 
-The Model Context Protocol (MCP) extends the application with additional capabilities through standardized tool integrations. This project demonstrates two distinct MCP integration approaches.
-
-### Integration Approaches
-
-**Important:** Choose ONE approach - they are mutually exclusive:
-
-| Approach | Configuration | Use Case |
-|----------|--------------|----------|
-| **Direct Connection** | `.env` only | Simple setup, direct access to MCP servers |
-| **Proxy Mode** | `mcp-relay.yaml` | Security scanning with AIRS, centralized gateway |
+The Model Context Protocol (MCP) extends the application with additional capabilities through standardized tool integrations. MCP servers are connected directly and configured in `.env`.
 
 ### Direct MCP Connection (AMAP)
 
@@ -233,7 +223,7 @@ The Model Context Protocol (MCP) extends the application with additional capabil
 
 **Use Case**: This MCP tool enables the AI assistant to answer delivery-related questions like "Do you deliver to [location]?" by calculating the distance between the customer's location and Vito's Pizza Cafe. The tool provides geocoding, distance calculation, and route planning capabilities that help determine service availability based on delivery radius.
 
-**Integration**: Connect directly to AMAP services without a security proxy (for proxy-based security scanning, see PAN MCP Relay section below).
+**Integration**: Connect directly to AMAP services.
 
 **Supported transports:**
 - **AMAP-SSE** (Server-Sent Events): HTTP-based streaming
@@ -252,8 +242,6 @@ AMAP_SSE_ENABLED=false
 AMAP_STDIO_ENABLED=true  # For stdio transport (requires npx)
 ```
 
-**Important:** When using PAN MCP Relay, disable direct AMAP connections (set both to `false`).
-
 ### Python Code Execution (code-sandbox-mcp)
 
 [code-sandbox-mcp](https://github.com/Automata-Labs-team/code-sandbox-mcp) provides isolated Python code execution in Docker containers, enabling the AI assistant to perform calculations, data analysis, and code validation safely.
@@ -264,7 +252,7 @@ AMAP_STDIO_ENABLED=true  # For stdio transport (requires npx)
 - Code snippet testing and validation
 - Generate and execute Python scripts dynamically
 
-**Integration**: Connect directly to code-sandbox-mcp via STDIO transport (for proxy-based security scanning, see PAN MCP Relay section below).
+**Integration**: Connect directly to code-sandbox-mcp via STDIO transport.
 
 **Requirements:**
 - Docker must be installed and running
@@ -312,84 +300,6 @@ Assistant: [Uses sandbox_exec to run Python date calculation]
 
 User: Write and run a Python function to calculate the Fibonacci sequence
 Assistant: [Creates and executes code in isolated container]
-```
-
-**Important:** When using PAN MCP Relay, disable direct connection (set `PYTHON_EXEC_MCP_ENABLED=false`).
-
-### PAN MCP Relay (Centralized Security Proxy)
-
-[PAN MCP Relay](https://github.com/PaloAltoNetworks/pan-mcp-relay) is a security-enhanced MCP relay server by Palo Alto Networks that acts as a centralized gateway for all MCP tools. It provides real-time AI threat protection by scanning tool interactions for:
-
-- Prompt injections and jailbreak attempts
-- Malicious URLs and toxic content
-- Sensitive data leakage (PII/PCI)
-- AI agentic threats and insecure outputs
-
-**Key Architecture:** The relay sits between your application and all upstream MCP servers, scanning tool descriptions, parameters, and responses through AIRS security profiles.
-
-```
-Vito's Backend → PAN MCP Relay (port 8800) → Upstream MCP Servers (AMAP, etc.)
-                      ↓ AIRS Security Checks
-```
-
-**Setup:**
-
-1. **Configure all MCP servers** in `pan-mcp-relay/mcp-relay.yaml`:
-   ```yaml
-   mcpRelay:
-     apiKey: <AIRS_API_KEY>
-     aiProfile: Demo-Profile-for-Input
-
-   mcpServers:
-     amap:
-       command: npx
-       args:
-         - -y
-         - "@amap/amap-maps-mcp-server"
-       env:
-         AMAP_MAPS_API_KEY: <API_KEY>
-     code-sandbox:
-       command: /path/to/code-sandbox-mcp
-       args: []
-       env: {}
-   ```
-
-2. **Start the relay server**:
-   ```bash
-   cd pan-mcp-relay
-   ./start_pan_mcp_relay.sh
-   ```
-
-   The relay will listen on http://localhost:8800
-
-3. **Enable in application** in `.env`:
-   ```bash
-   # Enable PAN MCP Relay
-   PAN_MCP_RELAY_ENABLED=true
-   PAN_MCP_RELAY_URL=http://127.0.0.1:8800/mcp/
-
-   # Disable direct MCP connections
-   AMAP_SSE_ENABLED=false
-   AMAP_STDIO_ENABLED=false
-   PYTHON_EXEC_MCP_ENABLED=false
-   ```
-
-4. **Start your application**:
-   ```bash
-   ./start_backend.sh
-   ```
-
-**Requirements:**
-- Valid Palo Alto Networks AIRS API key
-- AI Security Profile configured in Strata Cloud Manager
-- Node.js and npm installed (`npx` command available)
-
-**Important:** All MCP servers must be defined in `mcp-relay.yaml` - the relay acts as the single point of access for all tool integrations.
-
-To stop the relay:
-```bash
-# Find and stop the relay process
-pkill -f pan-mcp-relay
 ```
 
 ## API Usage for Red Teaming

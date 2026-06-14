@@ -80,9 +80,6 @@ docker/
 # LiteLLM (separate service)
 litellm/
 
-# MCP relay (separate service)
-pan-mcp-relay/
-
 # Test outputs
 .pytest_cache/
 .coverage

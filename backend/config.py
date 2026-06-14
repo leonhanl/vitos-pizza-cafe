@@ -29,10 +29,6 @@ class Config:
     CODE_SANDBOX_MCP_PATH = os.getenv("CODE_SANDBOX_MCP_PATH")
     PYTHON_EXEC_MCP_ENABLED = os.getenv("PYTHON_EXEC_MCP_ENABLED", "false").lower() == "true"
 
-    # PAN MCP Relay Configuration
-    PAN_MCP_RELAY_ENABLED = os.getenv("PAN_MCP_RELAY_ENABLED", "false").lower() == "true"
-    PAN_MCP_RELAY_URL = os.getenv("PAN_MCP_RELAY_URL", "http://127.0.0.1:8800/mcp/")
-
     # Embedding API Configuration
     # Note: OPENAI_EMBEDDING_BASE_URL defaults to OpenAI's endpoint, NOT to OPENAI_BASE_URL
     # This prevents errors when LLM uses a provider that doesn't support OpenAI embeddings
@@ -120,11 +116,6 @@ When performing calculations, please make sure to write Python code and use the 
             "args": [],
             "transport": "stdio",
             "env": {}
-        }
-    if PAN_MCP_RELAY_ENABLED:
-        MCP_SERVERS["pan-mcp-relay"] = {
-            "url": PAN_MCP_RELAY_URL,
-            "transport": "streamable_http"
         }
 
     @classmethod

@@ -21,8 +21,6 @@ services:
       - AMAP_API_KEY=${AMAP_API_KEY}
       - AMAP_SSE_ENABLED=${AMAP_SSE_ENABLED:-false}
       - AMAP_STDIO_ENABLED=${AMAP_STDIO_ENABLED:-false}
-      - PAN_MCP_RELAY_ENABLED=${PAN_MCP_RELAY_ENABLED:-false}
-      - PAN_MCP_RELAY_URL=${PAN_MCP_RELAY_URL}
       - BACKEND_API_URL=${BACKEND_API_URL}
     volumes:
       - ./logs:/app/logs  # Persistent logs
