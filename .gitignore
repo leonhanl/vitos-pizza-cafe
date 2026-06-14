@@ -191,4 +191,3 @@ temp/
 
 # Frontend configuration (auto-generated)
 frontend/config.js
-pan-mcp-relay/mcp-relay.yaml

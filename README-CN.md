@@ -215,16 +215,7 @@ docker-compose down -v
 
 ## MCP集成 (可选)
 
-模型上下文协议(MCP)通过标准化工具集成扩展应用程序的附加功能。这个项目演示了两种不同的MCP集成方法。
-
-### 集成方法
-
-**重要**: 选择一种方法 - 它们是互斥的:
-
-| 方法 | 配置 | 用例 |
-|----------|--------------|----------|
-| **直接连接** | 仅`.env` | 简单设置，直接访问MCP服务器 |
-| **代理模式** | `mcp-relay.yaml` | 使用AIRS的安全扫描，集中化网关 |
+模型上下文协议(MCP)通过标准化工具集成扩展应用程序的附加功能。MCP服务器以直接连接方式集成，并在`.env`中配置。
 
 ### 直接MCP连接 (AMAP)
 
@@ -232,7 +223,7 @@ docker-compose down -v
 
 **用例**: 这个MCP工具使AI助手能够回答配送相关问题，如"你们配送到[位置]吗？"，通过计算客户位置与Vito's Pizza Cafe之间的距离。该工具提供地理编码、距离计算和路线规划功能，帮助根据配送半径确定服务可用性。
 
-**集成**: 直接连接到AMAP服务，无需安全代理(对于基于代理的安全扫描，请参见下面的PAN MCP Relay部分)。
+**集成**: 直接连接到AMAP服务。
 
 **支持的传输**:
 - **AMAP-SSE** (服务器发送事件): 基于HTTP的流式传输
@@ -249,79 +240,6 @@ AMAP_STDIO_ENABLED=false
 # 或
 AMAP_SSE_ENABLED=false
 AMAP_STDIO_ENABLED=true  # 用于stdio传输(需要npx)
-```
-
-**重要**: 当使用PAN MCP Relay时，禁用直接AMAP连接(两者都设置为`false`)。
-
-### PAN MCP Relay (集中安全代理)
-
-[PAN MCP Relay](https://github.com/PaloAltoNetworks/pan-mcp-relay)是Palo Alto Networks的安全增强MCP中继服务器，作为所有MCP工具的集中网关。它通过扫描工具交互提供实时AI威胁保护:
-
-- 提示注入和越狱尝试
-- 恶意URL和有毒内容
-- 敏感数据泄露(PII/PCI)
-- AI代理威胁和不安全输出
-
-**关键架构**: 中继位于您的应用程序和所有上游MCP服务器之间，通过AIRS安全配置文件扫描工具描述、参数和响应。
-
-```
-Vito's Backend → PAN MCP Relay (端口 8800) → 上游MCP服务器 (AMAP等)
-                      ↓ AIRS安全检查
-```
-
-**设置**:
-
-1. **在`pan-mcp-relay/mcp-relay.yaml`中配置所有MCP服务器**:
-   ```yaml
-   mcpRelay:
-     apiKey: <AIRS_API_KEY>
-     aiProfile: Demo-Profile-for-Input
-
-   mcpServers:
-     amap:
-       command: npx
-       args:
-         - -y
-         - "@amap/amap-maps-mcp-server"
-       env:
-         AMAP_MAPS_API_KEY: <API_KEY>
-   ```
-
-2. **启动中继服务器**:
-   ```bash
-   cd pan-mcp-relay
-   ./start_pan_mcp_relay.sh
-   ```
-
-   中继将监听http://localhost:8800
-
-3. **在`.env`中的应用程序中启用**:
-   ```bash
-   # 启用PAN MCP Relay
-   PAN_MCP_RELAY_ENABLED=true
-   PAN_MCP_RELAY_URL=http://127.0.0.1:8800/mcp/
-
-   # 禁用直接MCP连接
-   AMAP_SSE_ENABLED=false
-   AMAP_STDIO_ENABLED=false
-   ```
-
-4. **启动您的应用程序**:
-   ```bash
-   ./start_backend.sh
-   ```
-
-**要求**:
-- 有效的Palo Alto Networks AIRS API密钥
-- 在Strata Cloud Manager中配置的AI安全配置文件
-- 安装Node.js和npm(`npx`命令可用)
-
-**重要**: 所有MCP服务器必须在`mcp-relay.yaml`中定义 - 中继充当所有工具集成的单一访问点。
-
-要停止中继:
-```bash
-# 找到并停止中继进程
-pkill -f pan-mcp-relay
 ```
 
 ## 红队API使用
