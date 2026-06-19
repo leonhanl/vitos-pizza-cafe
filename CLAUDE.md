@@ -12,7 +12,6 @@ This is Vito's Pizza Cafe - an AI customer service application demonstrating AI 
 ```bash
 # Install uv (recommended for faster package management)
 curl -LsSf https://astral.sh/uv/install.sh | sh
-# Note: For AMAP-STDIO MCP transport, Node.js and npm (with npx) are required
 
 # Create and activate virtual environment
 python -m venv .venv
@@ -219,10 +218,9 @@ LLM_MODEL="deepseek.v3-v1:0"
 
 ### Optional Services
 
-**AMAP MCP Tools** (two transport types supported):
-- `AMAP_API_KEY`: API key for AMAP services (shared by both transports)
+**AMAP MCP Tools**:
+- `AMAP_API_KEY`: API key for AMAP services
 - `AMAP_SSE_ENABLED`: Set to `true` to enable AMAP-SSE (Server-Sent Events) transport (default: `false`)
-- `AMAP_STDIO_ENABLED`: Set to `true` to enable AMAP-STDIO (subprocess via npx) transport (default: `false`)
 
 **LangSmith Tracing**:
 - `LANGSMITH_API_KEY`: For LangSmith tracing and debugging
@@ -314,7 +312,7 @@ python tests/test_litellm_health.py   # LiteLLM proxy health tests
   - **sse** (Server-Sent Events): HTTP-based one-way streaming
     - Example: AMAP-SSE (requires `AMAP_SSE_ENABLED=true` and `AMAP_API_KEY`)
   - **stdio** (Standard Input/Output): Local subprocess via command execution
-    - Example: AMAP-STDIO (requires `AMAP_STDIO_ENABLED=true`, `AMAP_API_KEY`, and npx installed)
+    - Example: code-sandbox-mcp (requires `PYTHON_EXEC_MCP_ENABLED=true` and `CODE_SANDBOX_MCP_PATH`)
   - **streamable_http**: Generic HTTP streaming for bidirectional communication
   - **websocket**: WebSocket protocol (not yet configured in this project)
 - LiteLLM proxy server can be used as an alternative LLM backend (see `litellm/` directory and `.env.example`)
@@ -337,7 +335,7 @@ python tests/test_litellm_health.py   # LiteLLM proxy health tests
 
 ### MCP Tool Integration Details
 - **Schema fixes** (`backend/mcp_tools.py`): Some MCP tools return schemas that don't comply with OpenAI API requirements (e.g., code-sandbox-mcp's `sandbox_exec` is missing an `items` definition on an array property). These are patched in `fix_tool_schema` before the tools are used.
-- **Transport detection**: Backend automatically detects enabled MCP transports and loads tools directly from each configured MCP server (SSE/STDIO).
+- **Transport detection**: Backend automatically detects enabled MCP transports and loads tools directly from each configured MCP server.
 
 ### Project Directories
 - `logs/`: Timestamped server log files (created by start scripts)

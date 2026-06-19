@@ -18,8 +18,6 @@ This application demonstrates common attack vectors in generative AI application
   ```bash
   curl -LsSf https://astral.sh/uv/install.sh | sh
   ```
-- **Node.js and npm** (optional): Required if you want to use AMAP-STDIO MCP transport
-  - `npx` command (included with npm) is used to run the AMAP MCP server
 - Docker and Docker Compose (needed for the LiteLLM proxy)
 - API Keys:
   - **OpenAI API Key**: Required for text embedding in RAG system and LLM responses
@@ -225,21 +223,15 @@ The Model Context Protocol (MCP) extends the application with additional capabil
 
 **Integration**: Connect directly to AMAP services.
 
-**Supported transports:**
+**Supported transport:**
 - **AMAP-SSE** (Server-Sent Events): HTTP-based streaming
-- **AMAP-STDIO** (Standard I/O): Local subprocess via `npx`
 
 **Configuration** in `.env`:
 ```bash
 AMAP_API_KEY=your_amap_api_key_here
 
-# Enable ONE transport type
+# Enable AMAP SSE transport
 AMAP_SSE_ENABLED=true   # For SSE transport
-AMAP_STDIO_ENABLED=false
-
-# OR
-AMAP_SSE_ENABLED=false
-AMAP_STDIO_ENABLED=true  # For stdio transport (requires npx)
 ```
 
 ### Python Code Execution (code-sandbox-mcp)

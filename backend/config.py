@@ -23,7 +23,6 @@ class Config:
     # AMAP Configuration
     AMAP_API_KEY = os.getenv("AMAP_API_KEY")
     AMAP_SSE_ENABLED = os.getenv("AMAP_SSE_ENABLED", "false").lower() == "true"
-    AMAP_STDIO_ENABLED = os.getenv("AMAP_STDIO_ENABLED", "false").lower() == "true"
 
     # Python Code Execution Configuration (code-sandbox-mcp)
     CODE_SANDBOX_MCP_PATH = os.getenv("CODE_SANDBOX_MCP_PATH")
@@ -83,18 +82,11 @@ When performing calculations, please make sure to write Python code and use the 
     # MCP Configuration
     # Format: {"server_name": {"url": "https://...", "transport": "sse", ...}}
     # Multiple transport types are supported: sse, stdio, streamable_http, websocket
-    # Both SSE and STDIO transports share the same AMAP_API_KEY for simplicity in this demo.
     # Example:
     # MCP_SERVERS = {
     #     "amap-sse": {
     #         "url": "https://mcp.amap.com/sse?key=YOUR_API_KEY",
     #         "transport": "sse"
-    #     },
-    #     "amap-stdio": {
-    #         "command": "uvx",
-    #         "args": ["amap-mcp-server"],
-    #         "transport": "stdio",
-    #         "env": {"AMAP_MAPS_API_KEY": "YOUR_API_KEY"}
     #     }
     # }
     MCP_SERVERS = {}
@@ -102,13 +94,6 @@ When performing calculations, please make sure to write Python code and use the 
         MCP_SERVERS["amap-sse"] = {
             "url": f"https://mcp.amap.com/sse?key={AMAP_API_KEY}",
             "transport": "sse"
-        }
-    if AMAP_STDIO_ENABLED and AMAP_API_KEY:
-        MCP_SERVERS["amap-stdio"] = {
-            "command": "npx",
-            "args": ["-y", "@amap/amap-maps-mcp-server"],
-            "transport": "stdio",
-            "env": {"AMAP_MAPS_API_KEY": AMAP_API_KEY}
         }
     if PYTHON_EXEC_MCP_ENABLED and CODE_SANDBOX_MCP_PATH:
         MCP_SERVERS["code-sandbox-mcp"] = {

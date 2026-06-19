@@ -20,7 +20,6 @@ services:
       # MCP configuration (optional)
       - AMAP_API_KEY=${AMAP_API_KEY}
       - AMAP_SSE_ENABLED=${AMAP_SSE_ENABLED:-false}
-      - AMAP_STDIO_ENABLED=${AMAP_STDIO_ENABLED:-false}
       - BACKEND_API_URL=${BACKEND_API_URL}
     volumes:
       - ./logs:/app/logs  # Persistent logs

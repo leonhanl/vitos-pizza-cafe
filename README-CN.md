@@ -17,8 +17,6 @@
   ```bash
   curl -LsSf https://astral.sh/uv/install.sh | sh
   ```
-- **Node.js和npm** (可选): 如果你想使用AMAP-STDIO MCP传输，则需要
-  - `npx`命令(包含在npm中)用于运行AMAP MCP服务器
 - Docker和Docker Compose (LiteLLM代理所需)
 - API密钥:
   - **OpenAI API密钥**: RAG系统中的文本嵌入和LLM响应所需
@@ -227,19 +225,13 @@ docker-compose down -v
 
 **支持的传输**:
 - **AMAP-SSE** (服务器发送事件): 基于HTTP的流式传输
-- **AMAP-STDIO** (标准I/O): 通过`npx`的本地子进程
 
 **在`.env`中配置**:
 ```bash
 AMAP_API_KEY=your_amap_api_key_here
 
-# 启用一种传输类型
+# 启用AMAP SSE传输
 AMAP_SSE_ENABLED=true   # 用于SSE传输
-AMAP_STDIO_ENABLED=false
-
-# 或
-AMAP_SSE_ENABLED=false
-AMAP_STDIO_ENABLED=true  # 用于stdio传输(需要npx)
 ```
 
 ## 红队API使用
